@@ -1,0 +1,19 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "nutanix-agw/<unified-endpoint-name>",
+  "provider": {
+    "nutanix-agw": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Nutanix Enterprise AI",
+      "options": {
+        "baseURL": "https://<nai-fqdn>/<documented-openai-compatible-base-path>",
+        "apiKey": "{env:NUTANIX_AGW_API_KEY}"
+      },
+      "models": {
+        "<unified-endpoint-name>": {
+          "name": "<unified-endpoint-name>"
+        }
+      }
+    }
+  }
+}

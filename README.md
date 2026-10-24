@@ -1,45 +1,38 @@
 # Agent Toolkit for Nutanix
 
-An open, agent-friendly starting point for connecting an AI coding agent to a customer-managed Nutanix environment and choosing a safe way to inspect or automate it.
+An open, agent-friendly starting point for connecting AI coding agents to customer-managed Nutanix environments and choosing safe ways to inspect or automate them.
 
-This project is an independent prototype. It is not an official Nutanix product or support statement. It starts with the Nutanix V4 API MCP Server, currently identified by its upstream repository as a Technical Preview, and documents Ansible and OpenTofu as alternative automation paths where appropriate.
+This project is an independent prototype, not an official Nutanix product or support statement. It starts with the Nutanix V4 API MCP Server, currently identified by its upstream repository as a Technical Preview, and documents Ansible and OpenTofu as alternative automation paths where appropriate.
 
-## First milestone: read-only connection
+## Optional OpenCode Dev Container
 
-The first supported journey is to connect a local MCP-compatible agent to Prism Central using the official Nutanix V4 API MCP Server, validate the connection, and perform read-only discovery. The machine running the MCP server must be able to reach Prism Central; this is normally a customer-network connection, not a publicly hosted Nutanix endpoint.
+The repository root contains `.devcontainer/`. Clone this repo, open its root in VS Code, and select **Dev Containers: Reopen in Container**. VS Code builds an Ubuntu-based container with OpenCode pre-installed and installs the toolkit skills into `.agents/skills/`.
 
-Read [Agent Setup](setup-instructions/setup.md) for the copy/paste prompt, then `ENTRY.md` for the task index. See `skills/nutanix-connect-prism-central/` for the connection path and `skills/nutanix-automation-method-selection/` for choosing MCP, Ansible, SDKs, or OpenTofu/Terraform.
+The container does not choose an LLM provider or require Nutanix Enterprise AI. Use any provider/subscription you already configure for OpenCode; other agents on your host are unaffected. If you want OpenCode to use an NAI unified endpoint, see the optional example in [`examples/opencode/README.md`](examples/opencode/README.md) and [`examples/opencode/opencode.nai.example.json`](examples/opencode/opencode.nai.example.json). That config is not activated automatically.
+
+## Agent Setup and first milestone
+
+Read [Agent Setup](setup-instructions/setup.md) for the copy/paste prompt and guided workflow. The first supported journey is a read-only connection from an MCP-compatible agent to Prism Central using the official Nutanix V4 API MCP Server. The machine running the MCP server must be able to reach customer-managed Prism Central; there is no universal public endpoint for customer clusters.
+
+See `skills/nutanix-connect-prism-central/` for connection guidance and `skills/nutanix-automation-method-selection/` for choosing MCP, Ansible, SDK/API code, or OpenTofu/Terraform.
 
 ## Ansible as an alternate path
 
-Ansible can be a useful alternate implementation path when a task is not exposed through the MCP server, or when repeatable playbook automation is a better fit. It is not an automatic fallback for MCP errors. A connection, authentication, permission, TLS, or API error must be diagnosed at its source rather than silently retried through another tool. Initially, generated playbooks are for human review and execution; this toolkit does not authorize agent-executed writes.
+Ansible can be a useful alternate implementation when MCP does not expose a needed operation or repeatable playbooks are a better fit. It is not an automatic fallback for MCP errors. Diagnose network, TLS, authentication, authorization, input, and service errors at their source. Generated write-capable automation is for human review and execution in this prototype.
 
-The same task may have different API coverage or semantics across MCP, SDK, Ansible, and infrastructure-as-code. Verify the exact Prism Central/AOS release, collection/provider version, supported module/resource, required permissions, and idempotency before proposing a path.
-
-## Install the skills
+## Install skills in another agent
 
 ```bash
-npx skills add <owner>/agent-toolkit-for-nutanix/skills
+npx skills add pipoe2h/agent-toolkit-for-nutanix/skills
 ```
 
-The current repository is private, so public distribution and the unredacted setup prompt are future decisions. The prototype does not include an auto-installer; use the agent-native installer above after the repository is available to your account.
+## Safety and scope
 
-## Scope and safety
-
-- Start read-only. Do not request or store secrets in chat; use the agent's secure credential mechanisms or protected local environment files.
-- Keep TLS verification enabled. Disabling certificate validation is a lab-only exception that requires an explicit reason and consent.
-- Do not presume the Prism Central endpoint is publicly reachable; the operator supplies an address and an agent runtime that can route to it.
-- Treat upstream MCP preview software as non-production until its maturity/support status changes.
-- Require explicit human review and execution for any generated write-capable Ansible, SDK, or Terraform/OpenTofu artifact in this MVP.
-- Distinguish operation coverage gaps from authentication, network, TLS, permission, or service failures. Do not use a different tool to bypass authorization.
-
-## Repository layout
-
-- `ENTRY.md` — agent-facing index and task routing.
-- `prompts/setup.md` — copy-paste guided setup prompt.
-- `AGENTS.md` and `rules/` — persistent safety rules.
-- `skills/` — focused, progressively loaded skills.
-- `archive/gateway-first-prototype/` — preserved first prototype, superseded by this foundation-first scope.
+- Start read-only and keep TLS verification enabled.
+- Never ask users to paste secrets into agent conversations or commit keys.
+- Do not assume Prism Central is publicly reachable; the agent/MCP runtime needs an authorized network path.
+- Treat the upstream Nutanix V4 API MCP Server as Technical Preview/non-production until its status changes.
+- Do not use alternate tools to bypass an MCP authorization or connection failure.
 
 ## License
 

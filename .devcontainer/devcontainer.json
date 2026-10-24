@@ -1,0 +1,21 @@
+{
+  "name": "Agent Toolkit for Nutanix - OpenCode",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    }
+  },
+  "runArgs": ["--init"],
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "remoteUser": "vscode",
+  "postCreateCommand": "bash .devcontainer/install-toolkit-skills.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": ["sst-dev.opencode"]
+    }
+  }
+}
