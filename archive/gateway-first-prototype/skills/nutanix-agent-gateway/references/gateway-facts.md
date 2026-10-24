@@ -1,10 +1,17 @@
 # Agent Gateway — verified surface
 
-Source: official Nutanix Enterprise AI documentation. Re-check the release label before
-repeating any of this: the surface grows every release, and MCP moved from Tech Preview to
-GA between 2.7 and 2.8.
+Every claim below is attributed to an official Nutanix Enterprise AI documentation page by
+**page title**. The Nutanix support portal serves those pages from session-based URLs, so a
+copied link is not stable. Readers can search the portal for the cited page titles; a full
+list appears in `## Sources` below.
+
+Re-check the release label before repeating any of this: the surface grows every release,
+and MCP moved from Tech Preview to GA between 2.7 and 2.8.
 
 ## Endpoint surface
+
+*(Sources: "Accessing a Unified Endpoint using Open AI Compatible Clients"; "Unified
+Endpoints" concept page.)*
 
 - Unified endpoint URLs carry a **gateway prefix**. Documented example:
   `/enterpriseai/gateway/v1/chat/completions`. Client base URL is therefore
@@ -20,6 +27,8 @@ GA between 2.7 and 2.8.
 
 ## Credentials
 
+*(Sources: "API Client Keys" concept page; "Creating an API Key"; "Updating an API Key".)*
+
 - Inference access uses an **API client key**: left nav → API Client Keys → Create a New
   Key → name it → assign it from the Unified Endpoints (or Local Endpoints) dropdown →
   Create → Copy Key.
@@ -28,6 +37,10 @@ GA between 2.7 and 2.8.
   endpoints.
 
 ## MCP governance (2.8)
+
+*(Sources: "MCP Servers" concept page; "Adding a Remote MCP Server"; "Deploying a Local MCP
+Server"; "Creating an MCP Connector"; "Creating an MCP Client Key"; "Security and
+Configuration Considerations for MCP Servers".)*
 
 - A single `/mcp` interface aggregates multiple tool servers for client applications, with
   RBAC and auditing applied at the gateway.
@@ -45,6 +58,8 @@ GA between 2.7 and 2.8.
 
 ## Rate limiting
 
+*(Sources: "Managing Rate Limit for Unified Endpoints"; the 2.8 release-note post.)*
+
 - Global token limit on the endpoint, plus optional per-client limits.
 - Per-client identification is either **by API client key** or **by request header
   value**. The modes are mutually exclusive; switching requires deleting the first
@@ -55,6 +70,9 @@ GA between 2.7 and 2.8.
 - Introduced as a **Tech Preview** capability. State the release label.
 
 ## Deployment requirements
+
+*(Sources: "Agent Gateway Requirements"; "Private Inference and Agent Gateway
+Requirements"; the 2.8 release-note post.)*
 
 - Agent-Gateway-only deployments do not need the read-write-many and object storage that
   Private Inference does.
@@ -72,3 +90,41 @@ limit; reserved header prefixes; rate limiting is Tech Preview.
 MCP together (release notes and procedure pages describe them differently); installed NAI
 and NKP versions; whether rate limiting is enabled; whether the client version in use
 actually passes custom-provider options through to API calls.
+
+## Sources
+
+Official Nutanix Enterprise AI documentation (Nutanix support portal), by page title:
+
+**Endpoints and inference**
+- Accessing a Unified Endpoint using Open AI Compatible Clients
+- Unified Endpoints (concept)
+- Creating a Unified Endpoint using Local Endpoints
+- Creating a Unified Endpoint using Providers
+- Managing Rate Limit for Unified Endpoints
+- Local Endpoints: Endpoints Attributes; Viewing Sample API Code; Testing a Local Endpoint
+
+**Credentials**
+- API Client Keys (concept)
+- Creating an API Key
+- Updating an API Key
+
+**MCP**
+- MCP Servers (concept)
+- Adding a Remote MCP Server
+- Deploying a Local MCP Server
+- Creating an MCP Connector
+- Creating an MCP Client Key
+- Security and Configuration Considerations for MCP Servers
+
+**Deployment**
+- Agent Gateway Requirements
+- Private Inference and Agent Gateway Requirements
+
+**Corroborating, non-portal**
+- Nutanix Agent Gateway launch blog (product messaging)
+- Nutanix Enterprise AI release-note posts for 2.7 and 2.8 (release labels and changes)
+- The NAI unified-endpoint lab in the `nutanix-japan/nai-llm` repository (a worked
+  local-endpoint + unified-endpoint walkthrough with real `curl` invocations)
+
+**Portal URL note:** support-portal URLs are session-based and not stable for another reader.
+Use the page titles above to search the portal.

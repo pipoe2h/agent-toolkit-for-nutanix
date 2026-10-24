@@ -16,9 +16,9 @@ traffic from agents to LLMs and from agents to MCP servers. It is the governance
 not the model-hosting plane — model deployment is Private Inference and is out of scope
 here.
 
-**Works best with** a deployed NAI instance. Facts in this collection are drawn from
-official Nutanix documentation; anything deployment-dependent is listed as a validation
-gate rather than asserted.
+**Works best with** a deployed Nutanix environment that exposes Prism Central V4 APIs. This collection starts with the Nutanix V4 API MCP Server for read-only discovery. The server is currently published as a Technical Preview and is not for production workloads. The connection host must be able to reach Prism Central on TCP 9440, and the agent client must support local MCP over stdio.
+
+Use this router to choose the access method; it is not itself a connection, credential store, or authorization layer. See `references/connection-basics.md` for the deployment boundary, security assumptions, and supported alternatives.
 
 ## How to use this skill
 

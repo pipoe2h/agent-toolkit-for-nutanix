@@ -48,6 +48,12 @@ the gateway is not in any model catalogue a client ships with, so every client i
 configured as a **custom OpenAI-compatible endpoint** rather than through a one-click
 connect flow.
 
+The configuration examples show the intended shape; claims about endpoint paths,
+field names, and credential workflows still need to be checked against the official
+Nutanix procedure for the deployed release. This skill currently provides no direct
+source links or per-claim citations; do not treat the examples as independently sourced
+documentation.
+
 ## Pitfalls
 
 - **Missing gateway prefix.** The single most common misconfiguration. A base URL of
@@ -72,3 +78,5 @@ connect flow.
 - Client-version-specific behaviour (e.g. whether a client passes custom-provider options
   through to API calls) must be confirmed on the installed version, not assumed.
 - Context-length limits must be taken from the deployed model behind the endpoint.
+- The official source page and release supporting each documented path, field, and
+  credential step must be identified and linked before publishing or operational use.

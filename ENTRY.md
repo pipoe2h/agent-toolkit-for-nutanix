@@ -1,41 +1,29 @@
-# Nutanix Agent Skills — start here
+# Agent Toolkit for Nutanix — agent entry point
 
-This is the index. If you are an AI coding agent that was pointed at this file by a
-prompt, read this page, then load only the skill that matches the user's task.
+This file is the index. Do not treat the skill collection as the connectivity layer: you need a running local MCP server or another installed automation tool with network reachability to the customer's Prism Central.
 
-## What this repository is
+## Routes
 
-A set of **agent skills** for Nutanix Enterprise AI and the Nutanix Agent Gateway.
-Each skill is a directory containing a `SKILL.md` with YAML frontmatter and
-instructions. Skills are loaded on demand, so nothing here costs context until it is used.
+| User task | Load this skill | Starting method |
+|---|---|---|
+| Connect an agent to a customer's Prism Central | `skills/nutanix-connect-prism-central/SKILL.md` | Official Nutanix V4 API MCP Server, stdio transport |
+| Check connection, discover API operations, inspect schemas/permissions | `skills/nutanix-connect-prism-central/SKILL.md` | MCP discovery and read-only API operations |
+| Task not covered by available MCP operations; generate repeatable automation | `skills/nutanix-automation-method-selection/SKILL.md` | Evaluate supported Ansible modules first; then SDK/IaC coverage |
+| Build custom programmatic integrations | `skills/nutanix-automation-method-selection/SKILL.md` | Nutanix V4 SDKs/API, after confirming release support |
+| Manage declarative infrastructure state | `skills/nutanix-automation-method-selection/SKILL.md` | Nutanix provider with OpenTofu or Terraform, after coverage review |
+| Agent Gateway / NAI-specific work | Not the first milestone | Not covered by this toolkit's foundation scope |
 
-## How to find what you need
+## Security rules
 
-| The user wants to | Read |
-|---|---|
-| Route a Nutanix gateway request to the right skill | `skills/nutanix-agent-gateway/SKILL.md` |
-| Connect a client (OpenCode, Hermes, SDK) to the gateway | `skills/nutanix-agw-connect-client/SKILL.md` |
-| Govern MCP servers, client keys, and connectors | `skills/nutanix-agw-mcp-governance/SKILL.md` |
-| Set persistent guardrails for how the agent works | `AGENTS.md` (copy into your project's rules file) |
-| Understand what is verified vs unconfirmed | the `Validation gates` section of each skill |
+1. Begin with read-only access and a low-privilege identity.
+2. Do not ask the user to paste passwords, API keys, or tokens in chat.
+3. Keep TLS certificate validation enabled. Do not bypass certificate, authorization, or network failures by switching tools.
+4. Never silently fall back from a failed MCP call. Identify whether the failure is missing operation coverage, bad input, network/TLS, authentication, authorization, or service health.
+5. Ansible, SDK, OpenTofu, and Terraform artifacts that can write are generated for human review and execution only in this MVP. Do not run/apply them.
+6. Preserve the user's own project rules and existing agent configuration when helping set up a client.
+7. Treat the Nutanix V4 API MCP Server as Technical Preview per its upstream disclaimer; do not present it as production-supported.
 
-## Install
+## References
 
-```bash
-npx skills add <owner>/<repo>/skills
-```
-
-Or copy `skills/<name>/` into your agent's skills directory (`~/.claude/skills/`,
-`~/.codex/skills/`, `~/.agents/skills/`, `~/.hermes/skills/`, ...).
-
-## Ground rules for any agent working from this repo
-
-1. **Do not invent product surface.** Every URL path, field label, and credential
-   step must trace to a Nutanix procedure page. If you cannot source it, it belongs
-   in a validation gate, not in prose presented as fact.
-2. **Copy exact strings literally.** Gateway prefixes, endpoint names, and API paths
-   are character-for-character. Do not normalise `/v1`, capitalisation, or a prefix.
-3. **State the release.** The Agent Gateway surface changes between releases; a fact
-   that was true in 2.7 may not hold in 2.8.
-4. **Prefer the gateway for agent traffic**, and say why, instead of letting each
-   client talk to a model provider directly.
+- `skills/nutanix-connect-prism-central/references/connection-basics.md`
+- `skills/nutanix-automation-method-selection/references/methods-and-fallback.md`

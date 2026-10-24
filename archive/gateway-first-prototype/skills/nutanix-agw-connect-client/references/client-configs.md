@@ -4,6 +4,12 @@ Shared rules: the base URL always carries the gateway prefix
 `https://<nai-fqdn>/enterpriseai/gateway/v1`, and the model identifier is always the
 unified endpoint name.
 
+Every value in angle brackets is a **placeholder you must replace**. These are config
+templates, not ready-to-run files. In particular, the context and output limits are **not**
+recommendations or defaults: custom endpoints get no catalogue metadata, and the actual
+values come from the model deployed behind the endpoint. The quoted limit placeholders
+below must be replaced with JSON integers.
+
 ## OpenCode — `opencode.json` (project) or `~/.config/opencode/opencode.json` (user)
 
 ```json
@@ -19,8 +25,8 @@ unified endpoint name.
       },
       "models": {
         "<unified-endpoint-name>": {
-          "name": "Nutanix Agent Gateway",
-          "limit": { "context": 128000, "output": 16384 }
+          "name": "<unified-endpoint-name>",
+          "limit": { "context": "<model-context-window>", "output": "<model-max-output>" }
         }
       }
     }
@@ -32,8 +38,9 @@ unified endpoint name.
 - `npm` must be `@ai-sdk/openai-compatible` for anything speaking
   `/v1/chat/completions`.
 - The provider ID must match the ID used at connect time, or the credential is not found.
-- `limit.context` / `limit.output` are required in practice — custom providers do not
-  inherit model metadata.
+- **`limit.context` / `limit.output` are required in practice** because custom providers do
+  not inherit model metadata. Replace both quoted placeholders with JSON integers from the
+  deployed model's own documentation; do not copy guessed token limits into a deployment.
 
 ## Hermes Agent — `~/.hermes/config.yaml`
 
@@ -46,7 +53,7 @@ providers:
     default_model: <unified-endpoint-name>
     models:
       <unified-endpoint-name>:
-        context_length: 128000
+        context_length: <model-context-window>
 model:
   provider: custom:nai-agw
   default: <unified-endpoint-name>
@@ -54,7 +61,7 @@ model:
 
 - The secret goes in `~/.hermes/.env`, never in `config.yaml`.
 - Declare `context_length`: Hermes rejects models under 64,000 tokens and custom endpoints
-  get no automatic catalogue metadata.
+  get no automatic catalogue metadata. Use the deployed model's real window.
 
 ## Not yet written
 

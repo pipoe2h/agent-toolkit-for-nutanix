@@ -1,25 +1,13 @@
 # Nutanix guidance
 
-Where these rules conflict with the project's own instructions, the project's
-instructions take precedence.
+These rules are independent project guidance, not an authorization system. Prism Central RBAC and local execution controls remain authoritative.
 
-- Before starting a Nutanix task, check whether a Nutanix skill is available and load
-  it in preference to general knowledge.
-- Never invent product surface. If a URL path, field label, credential step, or API
-  path cannot be traced to a Nutanix procedure page, put it in a validation gate
-  rather than stating it as fact.
-- Copy gateway prefixes, endpoint names, and API paths character-for-character.
-- State the Nutanix Enterprise AI release you are working against. The Agent Gateway
-  surface changes between releases.
-- Treat "documented" and "verified on this deployment" as different states, and say
-  which one you are reporting.
-- Do not provision or modify infrastructure without explicit confirmation, and prefer
-  infrastructure-as-code over direct CLI commands.
-- Route agent inference traffic through the Agent Gateway rather than letting each
-  client hold provider credentials directly.
-
-## Secret safety
-
-- Never print, echo, or commit an API client key, MCP client key, or TLS private key.
-- API client keys are shown once at creation. If a key is lost, it must be regenerated;
-  say so rather than trying to recover it.
+- Start with the available MCP connection to the authorized Prism Central environment; do not assume a public Nutanix API endpoint.
+- Verify the active Prism Central and AOS release and the actual discovered API operations before making product-specific claims.
+- Begin read-only. Keep TLS verification enabled. Never request credentials in chat or place secrets in committed files, command arguments, logs, or generated examples.
+- Do not treat an MCP error as permission to try another tool. Diagnose network, TLS, authentication, authorization, input, and missing-operation failures separately.
+- If an operation is not exposed by MCP, evaluate official `nutanix.ncp` Ansible coverage for the target release. Use the exact supported module and collection version; do not invent module names or parameters.
+- Use SDK/API code for custom workflows where the required operation is confirmed; use OpenTofu/Terraform when declarative state management is the right fit. These tools are complementary, not interchangeable.
+- For this prototype, produce potentially mutating Ansible, SDK, Terraform, or OpenTofu artifacts only for human review and execution. Do not run or apply them.
+- Treat the Nutanix V4 API MCP Server as Technical Preview according to its upstream repository until that status is explicitly changed.
+- Preserve existing agent configuration and project rules; append clearly delimited rules rather than overwriting existing content.

@@ -1,18 +1,11 @@
 # Setup prompt
 
-Copy everything between the rules into your AI coding agent.
+Copy this prompt into your AI agent after you have cloned `pipoe2h/agent-toolkit-for-nutanix` into a folder accessible to the agent. In a public distribution, this will be replaced with a raw repository URL.
 
 ---
 
-Read https://raw.githubusercontent.com/<owner>/<repo>/main/ENTRY.md and follow it.
-
-That file indexes a set of agent skills for Nutanix Enterprise AI and the Nutanix Agent
-Gateway. From it, load only the skill that matches my current task. Before you act on
-anything Nutanix-specific, tell me which skill you loaded and which of its claims are
-verified versus still open as validation gates. Do not invent endpoint paths, field
-labels, or credential steps.
+Read `<repo-path>/ENTRY.md` in the cloned `agent-toolkit-for-nutanix` repository and follow its routes. My goal is to connect this agent to a Nutanix Prism Central environment I am authorized to access. Start by checking the available local MCP servers and tools. Do not ask me to paste credentials into chat. Prefer a read-only identity and keep TLS verification enabled. Do not install software, edit agent configuration, connect to an environment, or perform API calls until you have summarized the required changes and I explicitly approve them. If MCP lacks an operation, diagnose the reason before proposing an alternative. Ansible, SDK, OpenTofu, or Terraform output must be presented for my review and execution; do not run or apply write-capable automation.
 
 ---
 
-Replace `<owner>/<repo>` with this repository. Everything after that is live: edit
-`ENTRY.md` or add a skill and the prompt above needs no change.
+The prompt points only at the index. Keep procedures and product facts in the repository so changes to those materials do not require users to repaste a changing block of instructions.

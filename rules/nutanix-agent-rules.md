@@ -1,15 +1,3 @@
-# Nutanix agent rules (canonical)
+# Nutanix agent rules
 
-Copy this content into your agent's project rules file:
-
-| Agent | File |
-|---|---|
-| Claude Code | `CLAUDE.md` |
-| Codex | `AGENTS.md` |
-| Cursor | `.cursor/rules/nutanix.mdc` |
-| Kiro | `.kiro/steering/nutanix.md` |
-
---- 
-
-See [`AGENTS.md`](../AGENTS.md) in this repository for the canonical content. Edit it
-there and let this file point at it, so there is exactly one copy to maintain.
+For Codex, use `AGENTS.md`. For Claude Code, append these rules to `CLAUDE.md`; for Cursor, place them in a file under `.cursor/rules/`. Do not overwrite existing project instructions. Preserve other server entries when changing MCP configuration. See `AGENTS.md` in this repository for the canonical rules.

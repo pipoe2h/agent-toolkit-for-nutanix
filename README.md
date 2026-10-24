@@ -1,40 +1,46 @@
-# Nutanix Agent Skills
+# Agent Toolkit for Nutanix
 
-Agent skills for Nutanix Enterprise AI (NAI) and the Nutanix Agent Gateway — in the
-open `SKILL.md` format, installable into Claude Code, Codex, Cursor, opencode, Hermes
-Agent, and any other agent that reads skills.
+An open, agent-friendly starting point for connecting an AI coding agent to a customer-managed Nutanix environment and choosing a safe way to inspect or automate it.
 
-A skill is a directory with a `SKILL.md` (YAML frontmatter + markdown instructions) and
-optional `references/`. Agents read the frontmatter at startup and load the body only
-when a task matches, so the whole collection stays cheap until it is needed.
+This project is an independent prototype. It is not an official Nutanix product or support statement. It starts with the Nutanix V4 API MCP Server, currently identified by its upstream repository as a Technical Preview, and documents Ansible and OpenTofu as alternative automation paths where appropriate.
 
-## Quick start
+## First milestone: read-only connection
 
-Paste the prompt in [`prompts/setup.md`](prompts/setup.md) into your agent. It points
-the agent at [`ENTRY.md`](ENTRY.md), which indexes everything else.
+The first supported journey is to connect a local MCP-compatible agent to Prism Central using the official Nutanix V4 API MCP Server, validate the connection, and perform read-only discovery. The machine running the MCP server must be able to reach Prism Central; this is normally a customer-network connection, not a publicly hosted Nutanix endpoint.
 
-To install mechanically instead:
+Read `prompts/setup.md` for the guided setup prompt, then `ENTRY.md` for routing. See `skills/nutanix-connect-prism-central/` for the connection path and `skills/nutanix-automation-method-selection/` for choosing MCP, Ansible, SDKs, or OpenTofu/Terraform.
+
+## Ansible as an alternate path
+
+Ansible can be a useful alternate implementation path when a task is not exposed through the MCP server, or when repeatable playbook automation is a better fit. It is not an automatic fallback for MCP errors. A connection, authentication, permission, TLS, or API error must be diagnosed at its source rather than silently retried through another tool. Initially, generated playbooks are for human review and execution; this toolkit does not authorize agent-executed writes.
+
+The same task may have different API coverage or semantics across MCP, SDK, Ansible, and infrastructure-as-code. Verify the exact Prism Central/AOS release, collection/provider version, supported module/resource, required permissions, and idempotency before proposing a path.
+
+## Install the skills
 
 ```bash
-npx skills add <owner>/<repo>/skills
+npx skills add <owner>/agent-toolkit-for-nutanix/skills
 ```
 
-## Layout
+The current repository is private, so public distribution and the unredacted setup prompt are future decisions. The prototype does not include an auto-installer; use the agent-native installer above after the repository is available to your account.
 
-```
-ENTRY.md                  # the index an agent reads first
-prompts/setup.md          # the copy-paste prompt
-AGENTS.md                 # persistent rules; copy into your project's rules file
-rules/                    # canonical rules content
-skills/                   # one directory per skill
-```
+## Scope and safety
 
-## Scope
+- Start read-only. Do not request or store secrets in chat; use the agent's secure credential mechanisms or protected local environment files.
+- Keep TLS verification enabled. Disabling certificate validation is a lab-only exception that requires an explicit reason and consent.
+- Do not presume the Prism Central endpoint is publicly reachable; the operator supplies an address and an agent runtime that can route to it.
+- Treat upstream MCP preview software as non-production until its maturity/support status changes.
+- Require explicit human review and execution for any generated write-capable Ansible, SDK, or Terraform/OpenTofu artifact in this MVP.
+- Distinguish operation coverage gaps from authentication, network, TLS, permission, or service failures. Do not use a different tool to bypass authorization.
 
-This collection covers the **Agent Gateway** — the control layer between agents, LLMs,
-and MCP servers. Private Inference (self-hosted model deployment) and cluster
-installation are out of scope.
+## Repository layout
 
-## Licence
+- `ENTRY.md` — agent-facing index and task routing.
+- `prompts/setup.md` — copy-paste guided setup prompt.
+- `AGENTS.md` and `rules/` — persistent safety rules.
+- `skills/` — focused, progressively loaded skills.
+- `archive/gateway-first-prototype/` — preserved first prototype, superseded by this foundation-first scope.
+
+## License
 
 Apache-2.0. See `LICENSE`.

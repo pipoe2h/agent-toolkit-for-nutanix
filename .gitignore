@@ -1,0 +1,20 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# MCP server artifacts, runtime state, and logs
+artifacts/
+logs/
+.nutanix-mcp/
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Agent-generated local files
+skills-lock.json
