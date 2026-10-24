@@ -8,7 +8,7 @@ This project is an independent prototype. It is not an official Nutanix product 
 
 The first supported journey is to connect a local MCP-compatible agent to Prism Central using the official Nutanix V4 API MCP Server, validate the connection, and perform read-only discovery. The machine running the MCP server must be able to reach Prism Central; this is normally a customer-network connection, not a publicly hosted Nutanix endpoint.
 
-Read `prompts/setup.md` for the guided setup prompt, then `ENTRY.md` for routing. See `skills/nutanix-connect-prism-central/` for the connection path and `skills/nutanix-automation-method-selection/` for choosing MCP, Ansible, SDKs, or OpenTofu/Terraform.
+Read [Agent Setup](setup-instructions/setup.md) for the copy/paste prompt, then `ENTRY.md` for the task index. See `skills/nutanix-connect-prism-central/` for the connection path and `skills/nutanix-automation-method-selection/` for choosing MCP, Ansible, SDKs, or OpenTofu/Terraform.
 
 ## Ansible as an alternate path
 

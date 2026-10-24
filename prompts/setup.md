@@ -1,11 +1,11 @@
 # Setup prompt
 
-Copy this prompt into your AI agent after you have cloned `pipoe2h/agent-toolkit-for-nutanix` into a folder accessible to the agent. In a public distribution, this will be replaced with a raw repository URL.
+Copy this single prompt into your AI agent after the repository is public:
 
----
+```text
+Set up Agent Toolkit for Nutanix by following instructions: https://raw.githubusercontent.com/pipoe2h/agent-toolkit-for-nutanix/refs/heads/master/setup-instructions/setup.md
 
-Read `<repo-path>/ENTRY.md` in the cloned `agent-toolkit-for-nutanix` repository and follow its routes. My goal is to connect this agent to a Nutanix Prism Central environment I am authorized to access. Start by checking the available local MCP servers and tools. Do not ask me to paste credentials into chat. Prefer a read-only identity and keep TLS verification enabled. Do not install software, edit agent configuration, connect to an environment, or perform API calls until you have summarized the required changes and I explicitly approve them. If MCP lacks an operation, diagnose the reason before proposing an alternative. Ansible, SDK, OpenTofu, or Terraform output must be presented for my review and execution; do not run or apply write-capable automation.
+Read the instructions first. Explain the planned changes and wait for my explicit approval before installing software, storing credentials locally, editing agent configuration, connecting to Prism Central, or running API calls. Do not ask me to paste secrets into chat. Keep the initial setup read-only with TLS verification enabled; do not run or apply Ansible, SDK, Terraform, or OpenTofu writes.
+```
 
----
-
-The prompt points only at the index. Keep procedures and product facts in the repository so changes to those materials do not require users to repaste a changing block of instructions.
+The detailed instructions are in [`setup-instructions/setup.md`](../setup-instructions/setup.md). They cover the current MCP Technical Preview, network access to customer-managed Prism Central, security gates, setup verification, and how to assess Ansible as an alternative without using it to bypass MCP errors or authorization failures.
