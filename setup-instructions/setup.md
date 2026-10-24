@@ -2,6 +2,8 @@
 
 This file is read by an AI coding agent after the user pastes the Agent Setup prompt on `setup-instructions/setup.md`. It guides the user through a first, read-only connection to an authorized customer-managed Prism Central using the official Nutanix V4 API MCP Server.
 
+**Container workflow:** when launched via this repo's Dev Container, OpenCode already has the two toolkit skills from `.agents/skills/`. The agent should load and follow them during setup. An end user who is not using this repo's Dev Container can paste this setup prompt without cloning the repo or pre-installing skills; this instruction file is the complete bootstrap workflow and references public upstream MCP documentation as needed. Skills are supplemental, not a prerequisite for MCP installation.
+
 This repository is an independent prototype, not an official Nutanix product. The upstream MCP server currently labels itself a Technical Preview and non-production. Before each run, read the current upstream [README](https://github.com/nutanix/ntnx-api-mcp-server/blob/main/README.md), [quickstart](https://github.com/nutanix/ntnx-api-mcp-server/blob/main/docs/quickstart.md), and [authentication/security guide](https://github.com/nutanix/ntnx-api-mcp-server/blob/main/docs/authentication.md). Follow those if they differ from this file.
 
 ## Safety contract
@@ -48,6 +50,14 @@ Summarize the install method, source/release or commit, files/locations that wou
 Ask for approval before installing. Do not run an opaque downloaded shell script. Prefer the upstream documented Python package workflow in an isolated virtual environment; inspect pinned dependencies and use the current upstream procedure. If installation requires a privilege escalation or an untrusted source, stop and ask.
 
 **Success:** the user approved the precise install and it completed from the verified upstream source.
+
+### Phase 2a — Load toolkit guidance when available
+
+- If OpenCode is running in this repository's Dev Container, discover and load `nutanix-connect-prism-central` before proceeding; load `nutanix-automation-method-selection` only if the requested task needs method selection.
+- If either skill is unavailable (for example, the user pasted this prompt into a different agent without cloning this repo), continue using the procedure and upstream links in this file. Do not require the user to clone a source repository just to access setup guidance.
+- Never treat an installed skill as the MCP server, a credential, or authorization; it is guidance only.
+
+**Success:** relevant local skill guidance is loaded if available, or the agent continues from this file without blocking.
 
 ### Phase 3 — Configure credentials securely
 
