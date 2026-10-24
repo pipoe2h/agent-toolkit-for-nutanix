@@ -2,7 +2,7 @@
   "name": "Agent Toolkit for Nutanix - OpenCode",
   "build": {
     "dockerfile": "Dockerfile",
-    "context": ".."
+    "context": "."
   },
   "features": {
     "ghcr.io/devcontainers/features/node:1": {

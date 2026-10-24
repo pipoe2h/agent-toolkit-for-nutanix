@@ -8,7 +8,7 @@ This project is an independent prototype, not an official Nutanix product or sup
 
 The repository root contains `.devcontainer/`. Clone this repo, open its root in VS Code, and select **Dev Containers: Reopen in Container**. VS Code builds an Ubuntu-based container with OpenCode pre-installed and installs the toolkit skills into `.agents/skills/`.
 
-The container does not choose an LLM provider or require Nutanix Enterprise AI. Use any provider/subscription you already configure for OpenCode; other agents on your host are unaffected. If you want OpenCode to use an NAI unified endpoint, see the optional example in [`examples/opencode/README.md`](examples/opencode/README.md) and [`examples/opencode/opencode.nai.example.json`](examples/opencode/opencode.nai.example.json). That config is not activated automatically.
+The container does not choose an LLM provider or require Nutanix Enterprise AI. Configure any OpenCode-supported provider/subscription as you normally would. To optionally use an NAI unified endpoint, copy `examples/opencode/opencode.nai.example.json` to a local config, replace its placeholders, and provide the API key through your local environment. The NAI config is not loaded by default; see `examples/opencode/README.md`. Other agents on your host are unaffected.
 
 ## Agent Setup and first milestone
 
