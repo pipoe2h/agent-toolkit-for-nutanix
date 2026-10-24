@@ -67,7 +67,7 @@ Do not have the agent create/populate `.env` by writing secret values, even if a
 
 ### Phase 4 — Load toolkit guidance when available
 
-- If OpenCode is running in this repository's Dev Container, discover and load `nutanix-connect-prism-central` before proceeding; load `nutanix-automation-method-selection` only if the requested task needs method selection.
+- If a toolkit skill is available to this agent, load `nutanix-connect-prism-central` before proceeding; load `nutanix-automation-method-selection` only if the requested task needs method selection. Skills are supplemental and must not make the flow depend on a particular agent.
 - If either skill is unavailable (for example, the user pasted this prompt into a different agent without cloning this repo), continue using the procedure and upstream links in this file. Do not require the user to clone a source repository just to access setup guidance.
 - Never treat an installed skill as the MCP server, a credential, or authorization; it is guidance only.
 
@@ -85,6 +85,24 @@ Read and summarize validation output with secrets redacted. Interpret unavailabl
 
 First verify from current upstream docs/code how the MCP process obtains credentials at runtime. The upstream quickstart distinguishes `.env` for `init` from AI-client runtime configuration; do not assume the `.env` automatically reaches a child process just because it exists. The runtime must load the operator-managed `.env` locally (for example, a documented `cwd`/config-file mechanism if supported), or use a client-supported local environment-variable reference whose value the operator configures outside the agent conversation. If no secure, documented path is available for this client, stop and explain the limitation; never fall back to embedding credentials in agent configuration or asking for them in chat.
 
+**General rule:** installing the server does not register it with an agent. Follow the selected client's current official MCP configuration procedure, explain the exact config path/entry, preserve existing entries, obtain approval before edits, then restart/reload as that client requires. The MCP process must run on a host/container that can reach Prism Central. For this upstream server, the documented settings loader reads `.env` from its current working directory; set the client MCP process working directory (`cwd` or equivalent) to the MCP server project directory containing the operator-managed `.env` and generated artifacts. Verify this behavior against the installed upstream version before relying on it. Do not copy secrets into the agent config.
+
+**Codex CLI / IDE example (local stdio):** current Codex documentation supports adding stdio servers with `codex mcp add <name> -- <command>` and config in `~/.codex/config.toml`. Since the command alone does not set the server's working directory, the reliable approach is an approved `config.toml` entry that explicitly sets `cwd` to the MCP project directory:
+
+```toml
+[mcp_servers.nutanix]
+command = "/absolute/path/to/ntnx-api-mcp-server/.venv/bin/nutanix-mcp"
+args = ["serve-stdio"]
+cwd = "/absolute/path/to/ntnx-api-mcp-server"
+startup_timeout_sec = 30
+tool_timeout_sec = 120
+enabled = true
+```
+
+These paths are examples, not universal values. Resolve them on the machine/container where Codex runs. Do not include credentials in TOML; the server loads its `.env` from `cwd` according to the upstream configuration docs. Explain that Codex's user-level config is shared by its CLI and IDE extension; a project-scoped `.codex/config.toml` may be used only when the project is trusted and the user wants project scope. Verify with `codex mcp list`, then start/restart a Codex session and use `/mcp` in its TUI to confirm the server and tools initialize. If either command is unavailable in the installed version, consult that version's official Codex docs rather than guessing.
+
+For OpenCode, Claude Code, Cursor, or another client, use that client's official local-stdio setup and verify its supported `cwd`/working-directory field. If it cannot launch the command from the directory containing `.env`, do not assume secrets are inherited; find a documented secure equivalent or stop and explain the gap.
+
 Show the exact non-secret client config entry, using absolute paths as required by the client. Preserve all existing MCP entries and unrelated settings. Explain each config change and ask approval before writing it. Never print a secret value or put credential literals in config. If the client requires values in a UI, the user must enter them directly in that UI without relaying them to the agent; otherwise stop if that does not meet the `.env` requirement.
 
 If the config file already contains the same server name or has an unfamiliar schema, stop and ask how to merge it rather than replacing it.
@@ -93,7 +111,7 @@ If the config file already contains the same server name or has an unfamiliar sc
 
 ### Phase 7 — Verify with a low-risk read-only test
 
-First ask the agent to list the available Nutanix MCP tools. Then, after the user approves the exact query, run a narrow read-only discovery request (e.g. inspect an operation schema/permissions or list a small page of VMs). Do not expose sensitive data in the chat; summarize minimally. Verify it came from the intended Prism Central, not a different profile/target.
+First ask the agent to list the available Nutanix MCP tools. If the VM namespace is present, ask it to inspect the `listVms` operation schema/permissions, then request a small page (up to five) of VMs using the discovered `vmm` namespace executor and the exact arguments from the schema. This is a read-only request; get user approval before sending it. Return only minimal fields such as VM name and power state, and avoid exposing sensitive inventory. Verify the result came from the intended Prism Central. If `vmm`/`listVms` is absent, report that accurately and inspect available namespaces/operations; do not invent a tool name or switch tools to bypass authorization.
 
 **Success:** MCP handshake completes and one authorized read-only request succeeds against the intended target. Do not call setup complete if only the MCP process started but no client handshake was verified.
 

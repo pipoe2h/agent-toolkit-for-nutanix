@@ -31,13 +31,19 @@ This skill documents the official Nutanix V4 API MCP Server, whose upstream repo
 2. **Read upstream material.** Confirm current install commands, config schema, supported MCP clients, preview status, and security guidance from the official `nutanix/ntnx-api-mcp-server` repository. Do not copy stale commands from this skill if upstream differs.
 3. **Choose the runtime host.** Place the MCP process where it can reach Prism Central. This may be the user's workstation, a management VM, or another controlled host; it does not need a public endpoint. Confirm the client can launch that process or otherwise reach its MCP transport.
 4. **Install in an isolated environment** following the upstream quickstart. Pin or record the upstream release/commit used. Do not run a `curl | shell` installer without review.
-5. **Configure credentials outside chat.** Use the current upstream-supported method. Do not place secrets in committed files, command-line arguments, screenshots, or chat. Ensure any `.env` file is excluded from version control and has restrictive permissions.
+5. **Configure credentials outside chat.** Use the current upstream-supported method. Do not place secrets in committed files, command-line arguments, screenshots, or chat. Ensure any `.env` file is excluded from version control and has restrictive permissions. Confirm from the installed server's current configuration docs that its working directory is where `.env` is loaded.
 6. **Initialize API artifacts** using the upstream-documented command. Artifacts are Prism Central-version-specific; do not reuse them when switching PC instances. Treat unavailable namespaces as potential coverage differences, not a reason to bypass access controls.
 7. **Validate before connecting the agent.** Run the upstream validation-only command, if available. Confirm DNS/routing, TCP 9440, TLS verification, authentication, and the resolved namespace list. Do not continue on a failed auth/TLS check.
-8. **Configure the agent client.** Add only the MCP server entry documented for that client. Preserve all existing MCP entries and settings. Use absolute paths where required. Do not set `READ_ONLY_MODE=false` for this first workflow.
-9. **Verify from the agent.** Ask it to list available discovery operations, inspect one harmless operation schema and required permissions, then perform a narrowly scoped read-only query (for example, list a small page of VMs) only after the user authorizes that query. Read the result back and confirm it came from the intended Prism Central.
+8. **Configure the agent client.** Installation does not register the server automatically. Add the MCP server entry using the target client's current official instructions; preserve existing MCP entries and settings, use absolute paths where required, and set its working directory to the server project directory containing `.env` and artifacts if the upstream loader requires that. Do not set `READ_ONLY_MODE=false` for this first workflow.
+9. **Verify discovery and use.** Confirm the agent client lists the Nutanix server and exposes tools after reload/restart. Ask it to inspect available operations, then (if `vmm.listVms` is present and permitted) request a small read-only page of VMs using the operation schema and user approval. Read the result back and confirm it came from the intended Prism Central.
 
 Completion criterion: the intended agent lists the MCP tools and successfully performs an authorized read-only query against the intended Prism Central, with TLS verification enabled and no credential exposed in chat or logs.
+
+## Codex setup example
+
+Codex CLI and IDE use a shared MCP config. Follow the current [Codex MCP documentation](https://developers.openai.com/codex/mcp.md) and upstream Nutanix configuration docs for the installed versions. For a local stdio server, configure `~/.codex/config.toml` with a `[mcp_servers.nutanix]` entry containing the absolute `command`, `args = ["serve-stdio"]`, and `cwd` set to the MCP server project directory. Do not add credential literals; the server reads its local `.env` from its working directory per current upstream configuration docs. If the user's installed version documents different behavior, follow that instead.
+
+After configuration, verify with `codex mcp list`; in the Codex TUI use `/mcp` to inspect active servers and tools. Restart/reopen the session if needed. Then request a read-only VM test: ask Codex to list the available Nutanix tools, inspect `vmm.listVms` schema/permissions if present, and request at most five VMs showing only name and power state. Do not hard-code executor arguments; derive them from the discovered schema. If tools are absent or the query fails, troubleshoot MCP registration/process startup, `cwd` and artifact paths, network/TLS/auth, and operation permissions in that order. Never bypass a failure by changing credentials or switching tools.
 
 ## Troubleshooting order
 
@@ -63,6 +69,7 @@ Do not change the transport or switch to Ansible to mask a failure in steps 1–
 
 - Upstream repository currently labels the server Technical Preview and non-production; re-check before each release.
 - Client-specific configuration schema and launch behavior must be verified against the installed client version.
+- Codex CLI and IDE currently share MCP config; verify exact supported keys and working-directory behavior against the installed Codex version.
 - Actual PC/AOS V4 API availability, namespace support, and RBAC requirements depend on the target deployment.
 - A dedicated least-privilege identity and certificate trust chain must be confirmed on the user's environment.
 - A successful validation-only check does not prove the agent client can launch the process; test the full client handshake separately.
