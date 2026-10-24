@@ -45,6 +45,12 @@ Codex CLI and IDE use a shared MCP config. Follow the current [Codex MCP documen
 
 After configuration, verify with `codex mcp list`; in the Codex TUI use `/mcp` to inspect active servers and tools. Restart/reopen the session if needed. Then request a read-only VM test: ask Codex to list the available Nutanix tools, inspect `vmm.listVms` schema/permissions if present, and request at most five VMs showing only name and power state. Do not hard-code executor arguments; derive them from the discovered schema. If tools are absent or the query fails, troubleshoot MCP registration/process startup, `cwd` and artifact paths, network/TLS/auth, and operation permissions in that order. Never bypass a failure by changing credentials or switching tools.
 
+## OpenCode setup example
+
+OpenCode uses its own JSON `opencode.json`/`opencode.jsonc` configuration, not Codex TOML. Follow the official [OpenCode MCP documentation](https://opencode.ai/docs/mcp-servers/). Under the existing top-level `mcp` key, add a local server with `type: "local"`, a `command` array, `cwd` set to the MCP project directory, `enabled: true`, and an appropriate timeout. Use absolute paths within the runtime environment. Never overwrite existing config or put secrets in JSON; the `cwd` must allow the Nutanix server to load its operator-managed `.env` and artifacts according to current upstream docs.
+
+After saving, restart/reload OpenCode and check MCP status/tools using the interface and diagnostics documented for the installed OpenCode version. Ask OpenCode to list Nutanix tools, inspect `vmm.listVms` schema/permissions, then request at most five VMs with only name and power state using the actual discovered operation arguments. If the tools do not appear, debug config parsing, server process startup, command/`cwd`/artifacts, then network/TLS/auth. Do not give Codex instructions to an OpenCode user.
+
 ## Troubleshooting order
 
 1. Is the MCP process installed and executable by the agent client?

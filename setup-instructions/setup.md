@@ -103,6 +103,25 @@ These paths are examples, not universal values. Resolve them on the machine/cont
 
 For OpenCode, Claude Code, Cursor, or another client, use that client's official local-stdio setup and verify its supported `cwd`/working-directory field. If it cannot launch the command from the directory containing `.env`, do not assume secrets are inherited; find a documented secure equivalent or stop and explain the gap.
 
+**OpenCode local stdio example:** OpenCode uses JSON configuration (`opencode.json` or `opencode.jsonc`), not Codex TOML. Add this object under the existing top-level `mcp` object, preserving every other setting:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "nutanix": {
+      "type": "local",
+      "command": ["/absolute/path/to/ntnx-api-mcp-server/.venv/bin/nutanix-mcp", "serve-stdio"],
+      "cwd": "/absolute/path/to/ntnx-api-mcp-server",
+      "enabled": true,
+      "timeout": 120000
+    }
+  }
+}
+```
+
+Replace both paths with locations inside the environment where OpenCode runs (inside the Dev Container if that is where OpenCode runs). The `cwd` must be the MCP project directory so the server can load its operator-managed `.env` and generated artifacts as documented upstream. Do not place credentials in this JSON. Validate config syntax, restart/reload OpenCode, then check its MCP status/logs or ask it to list available Nutanix MCP tools. Exact UI/status commands vary by OpenCode version; use current OpenCode docs.
+
 Show the exact non-secret client config entry, using absolute paths as required by the client. Preserve all existing MCP entries and unrelated settings. Explain each config change and ask approval before writing it. Never print a secret value or put credential literals in config. If the client requires values in a UI, the user must enter them directly in that UI without relaying them to the agent; otherwise stop if that does not meet the `.env` requirement.
 
 If the config file already contains the same server name or has an unfamiliar schema, stop and ask how to merge it rather than replacing it.
