@@ -6,9 +6,9 @@ This project is an independent prototype, not an official Nutanix product or sup
 
 ## Optional OpenCode Dev Container
 
-The repository root contains `.devcontainer/`. Clone this repo, open its root in VS Code, and select **Dev Containers: Reopen in Container**. VS Code builds an Ubuntu-based container with OpenCode pre-installed and installs the toolkit skills into `.agents/skills/`.
+The Dev Container builds an Ubuntu-based image with OpenCode pre-installed. On first container creation, `.devcontainer/install-toolkit-skills.sh` installs the toolkit's two skills into the repository-local `.agents/skills/` directory, which OpenCode discovers automatically. The skills are available as guidance; **the MCP server itself is not installed or configured by the image**.
 
-The container does not choose an LLM provider or require Nutanix Enterprise AI. Configure any OpenCode-supported provider/subscription as you normally would. To optionally use an NAI unified endpoint, copy `examples/opencode/opencode.nai.example.json` to a local config, replace its placeholders, and provide the API key through your local environment. The NAI config is not loaded by default; see `examples/opencode/README.md`. Other agents on your host are unaffected.
+After the container opens, paste the prompt from [`prompts/setup.md`](prompts/setup.md) into OpenCode. That prompt points the agent at the detailed Agent Setup workflow; the workflow then guides the agent and user through the later MCP installation, approval, credential, configuration, and read-only verification steps. `opencode` starts with the user's default provider/subscription; no LLM provider or key is set by the container.
 
 ## Agent Setup and first milestone
 
