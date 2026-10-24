@@ -10,6 +10,9 @@ artifacts/
 logs/
 .nutanix-mcp/
 
+# User-local OpenCode provider configuration (may contain endpoint specifics)
+opencode.local.json
+
 # Python environments and caches
 .venv/
 venv/

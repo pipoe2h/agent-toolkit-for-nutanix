@@ -8,7 +8,8 @@ This repository is an independent prototype, not an official Nutanix product. Th
 
 ## Safety contract
 
-- **No secrets in chat.** Never ask the user to paste a password, API key, token, or private key into the conversation. Use a secure local prompt, protected environment injection, or the official secret manager path supported by their agent/runtime.
+- **No secrets in chat or credential prompts.** Never ask the user to paste a password, API key, token, or private key into the conversation, and never ask them to type a secret into an agent prompt. For this guided setup, the operator prepares the MCP server's local `.env` file themselves. The agent may check only that the file exists, is ignored by Git, has restrictive permissions, and contains required variable names; it must never display, read back, parse-and-log, or transmit values from that file.
+- **Credentials are a prerequisite, not an agent-gathered input.** If the required local `.env` has not been prepared, stop and tell the user setup cannot proceed until they configure it themselves. Do not continue to test credentials, fetch artifacts, configure the MCP client, or contact Prism Central while it is absent or incomplete.
 - **Read-only first.** Keep the upstream MCP `READ_ONLY_MODE` enabled (currently documented default: `true`) and use a least-privilege identity. Verify the effective mode rather than trusting a presumed default.
 - **TLS verification stays enabled.** Upstream documents `PC_INSECURE=false` as the default. Do not suggest disabling TLS verification to make setup pass. If a lab uses a self-signed certificate, prefer installing its CA in the host trust store; any temporary lab-only exception requires the operator's explicit decision and must never be described as production guidance.
 - **No writes in this setup.** Do not perform mutating API calls, turn off read-only mode, run Ansible, run mutating SDK/API scripts, or apply Terraform/OpenTofu. Generated automation is for user review and execution only.
@@ -18,14 +19,14 @@ This repository is an independent prototype, not an official Nutanix product. Th
 
 ## Before setup: gather non-secret information
 
-Ask for the missing items together; do not request secret values in chat:
+Ask for missing non-secret items together. Do not ask the user to provide a credential value in chat or enter it into an agent prompt:
 
 1. Which agent client and version will connect (e.g. Claude Code, Codex, Cursor, another MCP-compatible client)?
 2. Which machine will run the MCP server, and can it reach the customer's Prism Central network?
 3. What is the Prism Central IP/FQDN and port? The current upstream default is `9440`; verify this against the customer's deployment. Never guess an address.
 4. What Prism Central and AOS versions are installed, if known? V4 namespaces and operations vary by release/deployment.
 5. Does Prism Central present a certificate trusted by the MCP host?
-6. Has the administrator provided an authorized least-privilege identity suitable for read-only discovery? Do not ask them to send its credential in chat.
+6. Is the user prepared to configure the MCP server's local `.env` themselves with an authorized least-privilege identity, without showing the values to the agent? The file will be needed before any credential-bearing validation or Prism Central API call.
 7. Is this an isolated non-production lab? The MCP server is currently a Technical Preview.
 
 If the host cannot route to Prism Central, stop before installation or configuration. Explain that the user needs an authorized host/network path first; this repo does not create a tunnel or public endpoint.
@@ -45,13 +46,26 @@ Each phase is a gate. Explain what will change, get approval where marked, execu
 
 ### Phase 2 — Explain and approve installation
 
-Summarize the install method, source/release or commit, files/locations that would be created, required dependencies, network destinations, credential storage plan, and MCP config file to be modified. Note explicitly that upstream marks the server as Technical Preview/non-production.
+Summarize the install method, source/release or commit, files/locations that would be created, required dependencies, network destinations, credential storage plan, and MCP config file to be modified. Note explicitly that upstream marks the server as Technical Preview/non-production. Do not configure an MCP client before the user-managed `.env` gate in Phase 2b has passed.
 
 Ask for approval before installing. Do not run an opaque downloaded shell script. Prefer the upstream documented Python package workflow in an isolated virtual environment; inspect pinned dependencies and use the current upstream procedure. If installation requires a privilege escalation or an untrusted source, stop and ask.
 
 **Success:** the user approved the precise install and it completed from the verified upstream source.
 
-### Phase 2a — Load toolkit guidance when available
+### Phase 3 — Operator prepares local credentials
+
+After installation, but **before connectivity validation, artifact initialization, MCP client configuration, or API requests**, require the operator to prepare the local `.env` file.
+
+1. Tell the user: “I can't proceed to connect or validate until you configure the MCP server's local `.env` file yourself. Do not paste the values here. Copy the upstream `.env.example` to `.env` in the MCP server project directory, fill in the Prism Central host/port and exactly one supported auth method, keep `PC_INSECURE=false` and `READ_ONLY_MODE=true`, and save the file with owner-only permissions. Tell me when you have done this; do not send the file or its contents.”
+2. Do not print secret placeholders together with instructions that invite pasting them into chat. Do not ask the user to type the secret into a conversational prompt. If the user asks where to put a value, refer to the variable name in the local `.env` and stop there.
+3. Wait for the user to confirm the file is prepared. Then, only with approval, perform metadata-only checks: test the file exists, is ignored by Git, has POSIX mode `0600` or stricter, and contains required key names. Do not source the file, display lines, hash values, echo environment variables, enable shell tracing, or capture command output that could include credentials. A safe checker must emit only `PASS`/`FAIL` and missing variable names.
+4. If checks fail or the user has not prepared the file, report the exact non-secret fix and wait. Do not continue around this gate.
+
+Do not have the agent create/populate `.env` by writing secret values, even if a local file editor is available. The operator creates and edits the file outside the agent conversation. The agent may verify only its metadata and variable-name presence under the restrictions above.
+
+**Success:** user confirms they prepared `.env`; the approved metadata-only checks pass; no secret value entered chat, tool output, logs, or repository.
+
+### Phase 4 — Load toolkit guidance when available
 
 - If OpenCode is running in this repository's Dev Container, discover and load `nutanix-connect-prism-central` before proceeding; load `nutanix-automation-method-selection` only if the requested task needs method selection.
 - If either skill is unavailable (for example, the user pasted this prompt into a different agent without cloning this repo), continue using the procedure and upstream links in this file. Do not require the user to clone a source repository just to access setup guidance.
@@ -59,31 +73,25 @@ Ask for approval before installing. Do not run an opaque downloaded shell script
 
 **Success:** relevant local skill guidance is loaded if available, or the agent continues from this file without blocking.
 
-### Phase 3 — Configure credentials securely
+### Phase 5 — Initialize and validate after the credential gate
 
-Use the current upstream-supported auth method. Nutanix v4 API key authentication has specific account/version requirements; do not assume all user types support API keys. If the right credential or permissions are uncertain, direct the user to their Prism Central administrator. Do not create service accounts, API keys, roles, or policies as part of this read-only setup.
-
-Configure the secret through a secure local mechanism. Ensure the `.env` (if used) is ignored by Git and has appropriate file permissions. Keep `PC_INSECURE=false` and `READ_ONLY_MODE=true` unless current upstream semantics differ; if they differ, stop and re-evaluate this contract before continuing. Never print `.env`, command environments, API keys, or raw authorization headers.
-
-**Success:** local config is present, secret values were not displayed, TLS verification is enabled, and effective read-only mode is confirmed.
-
-### Phase 4 — Initialize and validate
-
-Follow current upstream instructions to fetch Prism Central-compatible API artifacts and validate connectivity. Artifacts are specific to the Prism Central target; do not reuse them when switching environments. Do not run `serve-stdio` manually if the selected client starts it automatically; follow the upstream/client-specific setup.
+Only proceed after Phase 3 succeeded and the user approves contacting the exact Prism Central endpoint. Follow current upstream instructions to fetch Prism Central-compatible API artifacts and validate connectivity. Artifacts are specific to the Prism Central target; do not reuse them when switching environments. Do not run `serve-stdio` manually if the selected client starts it automatically; follow the upstream/client-specific setup. Keep command output redacted; never inspect or print `.env` contents.
 
 Read and summarize validation output with secrets redacted. Interpret unavailable namespaces as possible deployment/version coverage differences; distinguish those from network errors, auth failures, or artifact-download failures.
 
 **Success:** validation reports a ready connection to the intended PC, with TLS verification active and no unresolved auth/network errors.
 
-### Phase 5 — Configure the agent client
+### Phase 6 — Configure the agent client
 
-Show the exact agent config entry using absolute paths as required by that client and the MCP server's current upstream config. Preserve all existing MCP entries and unrelated settings. The entry must pass credentials through the secure local mechanism, not as committed literals. Explain any user-specific config change, then get approval before writing it.
+First verify from current upstream docs/code how the MCP process obtains credentials at runtime. The upstream quickstart distinguishes `.env` for `init` from AI-client runtime configuration; do not assume the `.env` automatically reaches a child process just because it exists. The runtime must load the operator-managed `.env` locally (for example, a documented `cwd`/config-file mechanism if supported), or use a client-supported local environment-variable reference whose value the operator configures outside the agent conversation. If no secure, documented path is available for this client, stop and explain the limitation; never fall back to embedding credentials in agent configuration or asking for them in chat.
+
+Show the exact non-secret client config entry, using absolute paths as required by the client. Preserve all existing MCP entries and unrelated settings. Explain each config change and ask approval before writing it. Never print a secret value or put credential literals in config. If the client requires values in a UI, the user must enter them directly in that UI without relaying them to the agent; otherwise stop if that does not meet the `.env` requirement.
 
 If the config file already contains the same server name or has an unfamiliar schema, stop and ask how to merge it rather than replacing it.
 
-**Success:** config parses, existing entries remain unchanged, and the client recognizes the Nutanix server after a documented reload/restart.
+**Success:** the secure runtime credential-loading path is verified against current upstream and client documentation, config contains no secrets, existing entries remain unchanged, and the client recognizes the Nutanix server after a documented reload/restart.
 
-### Phase 6 — Verify with a low-risk read-only test
+### Phase 7 — Verify with a low-risk read-only test
 
 First ask the agent to list the available Nutanix MCP tools. Then, after the user approves the exact query, run a narrow read-only discovery request (e.g. inspect an operation schema/permissions or list a small page of VMs). Do not expose sensitive data in the chat; summarize minimally. Verify it came from the intended Prism Central, not a different profile/target.
 
