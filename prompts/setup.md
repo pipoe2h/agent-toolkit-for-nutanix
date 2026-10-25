@@ -4,7 +4,7 @@ Copy this prompt into your existing AI coding agent. It will inspect its environ
 
 ```text
 Connect this agent to my Nutanix environment by following:
-https://raw.githubusercontent.com/pipoe2h/agent-toolkit-for-nutanix/main/setup-instructions/setup.md
+https://raw.githubusercontent.com/pipoe2h/agent-toolkit-for-nutanix/b40d617/setup-instructions/setup.md
 
 Do not ask me to enter a credential in this chat. When credential entry is needed, give me the exact command to run in a separate local terminal using `scripts/configure_nutanix_credentials.py`; make sure the helper uses hidden input and never prints credentials. Do not claim setup is blocked without explaining what I should do next. Keep the connection read-only and verify it with one small inventory query. Stop after that verification.
 

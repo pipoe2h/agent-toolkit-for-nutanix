@@ -26,10 +26,8 @@ Do not ask for the Prism Central hostname/IP, username, authentication method, p
 
 Ask only for these missing items:
 
-1. Confirmation the user is authorized to connect to this PC and it is non-production.
-2. Approval of the exact local installation/configuration actions and contacting the intended PC.
-
-After the user approves the local installation and target-contact plan, proceed with `git clone`, virtual environment creation, and `pip install`. Do not ask for any Prism Central address or auth detail in a question/form. Once the server is installed and its path is verified, immediately offer the separate-terminal helper command below, along with the `.env` plaintext-at-rest disclosure; let that helper collect all PC connection details privately.
+- A first-connection workflow may ask the user only for the non-secret confirmation they are authorized and the target is non-production, plus approval of exact local changes and contacting the target. Do not ask for Prism Central IP/FQDN, username, auth method, password, or API key in a client question/form/dialog. That information is collected by the local helper after installation approval.
+- For this tested journey, proceed with `git clone`, venv creation, `pip install`, then offer the helper command plus disclosure that `.env` is plaintext at rest with mode `0600`. Let the helper collect host and credentials privately; once it succeeds, continue with MCP client registration and the read-only query.
 
 ## Private credential entry
 
