@@ -6,11 +6,11 @@ This workflow is for an agent to set up one local stdio connection to an authori
 
 Success means the chosen agent actually discovers the Nutanix MCP tools and performs one authorized, small, read-only query against the intended Prism Central. An install, `init`, validation command, or textual claim without the live agent handshake and read is not success.
 
-The user already has an agent/model subscription and must authorize access to Prism Central. The machine running the local MCP subprocess needs an existing authorized route to Prism Central; this workflow does not create a tunnel. Use only a non-production environment while upstream labels the server Technical Preview. Stop if any prerequisite or safety property cannot be confirmed.
+This repo provides an agent-directed first connection to customer-managed Prism Central. Upstream's server is currently Technical Preview/non-production. A private local-terminal step will collect the endpoint and credentials; the agent must not ask you to enter them in chat, client forms, or approval dialogs.
 
 ## Non-negotiable safety rules
 
-- Never request or accept a password, API key, token, or private key in chat. Never place a secret in the agent config, command arguments, logs, screenshots, repository, or generated output.
+- Never request or accept a password, API key, token, or private key in chat, in client forms, or in approval dialogs. Never place a secret in the agent config, command arguments, logs, screenshots, repository, or generated output.
 - Do not write, mutate, or delete anything in Prism Central. Keep server-side `READ_ONLY_MODE=true`, use PC RBAC least privilege, and make one GET-only inventory call.
 - Enforce HTTPS. Upstream settings code currently constructs `http://` when `PC_PORT != 9440`; do not use a custom port for this setup. `PC_INSECURE=false` means certificate verification is enabled, not that the URL is HTTPS on every port.
 - Never disable TLS verification to make setup pass. Stop on certificate failures and explain that a trusted certificate/CA path is needed.
@@ -22,13 +22,14 @@ The user already has an agent/model subscription and must authorize access to Pr
 
 First inspect locally, without network requests or edits: operating system, agent and version, Python/Git/uv availability, existing MCP configuration and Nutanix server install. Do not dump configuration files that may contain credentials. Identify the runtime host where the agent launches local MCP processes.
 
+Do not ask for the Prism Central hostname/IP, username, authentication method, password, or API key in a chat question, client form, approval dialog, or agent-generated prompt. The local hidden-input helper below gathers the endpoint, auth method, username, and secret. The agent may ask only the non-secret authorization and non-production confirmation as a normal explicit safety gate, without requesting account details.
+
 Ask only for these missing items:
 
-1. The exact Prism Central IP/FQDN, if not already known from a safe local config. Do not guess it. This first workflow requires HTTPS port `9440`.
-2. Confirmation the user is authorized to connect to this PC and it is non-production.
-3. If the user wants to continue after the installation plan is explained, approval of that exact plan.
+1. Confirmation the user is authorized to connect to this PC and it is non-production.
+2. Approval of the exact local installation/configuration actions and contacting the intended PC.
 
-Do not require the user to look up PC/AOS versions before setup; discover them only if a specific error requires them. Test TCP reachability only after exact target and approval, without credentials. If unreachable, stop and explain the network-path prerequisite.
+After the user approves the local installation and target-contact plan, proceed with `git clone`, virtual environment creation, and `pip install`. Do not ask for any Prism Central address or auth detail in a question/form. Once the server is installed and its path is verified, immediately offer the separate-terminal helper command below, along with the `.env` plaintext-at-rest disclosure; let that helper collect all PC connection details privately.
 
 ## Private credential entry
 
