@@ -1,26 +1,33 @@
 # Agent Toolkit for Nutanix
 
-An open, agent-friendly starting point for connecting AI coding agents to customer-managed Nutanix environments and choosing safe ways to inspect or automate them.
+The handoff below is currently blocked at credential entry. The upstream MCP server has no verified private credential wizard, and its `init` command writes secrets back to `.env` without enforcing restrictive file permissions. The agent must not collect secrets in chat or claim a completed setup. This independent prototype targets an existing AI coding agent and read-only communication with customer-managed Prism Central using the official Nutanix V4 API MCP Server. Upstream currently labels that MCP server Technical Preview/non-production; do not use it in production. The current handoff does not yet install/connect the MCP server because secure credential entry is unresolved.
 
-This project is an independent prototype, not an official Nutanix product or support statement. It starts with the Nutanix V4 API MCP Server, currently identified by its upstream repository as a Technical Preview, and documents Ansible and OpenTofu as alternative automation paths where appropriate.
+## Connect your agent
 
-## Optional OpenCode Dev Container
+Copy this prompt into your existing AI coding agent. This initial release reports the current blocker; it does not yet install or connect the MCP server.
 
-The Dev Container builds an Ubuntu-based image with OpenCode pre-installed. On first container creation, `.devcontainer/install-toolkit-skills.sh` installs the toolkit's two skills into the repository-local `.agents/skills/` directory, which OpenCode discovers automatically. The skills are available as guidance; **the MCP server itself is not installed or configured by the image**.
+```text
+Connect this agent to my Nutanix environment by following:
+https://raw.githubusercontent.com/pipoe2h/agent-toolkit-for-nutanix/main/setup-instructions/setup.md
 
-After the container opens, paste the prompt from [`prompts/setup.md`](prompts/setup.md) into OpenCode. That prompt points the agent at the detailed Agent Setup workflow; the workflow then guides the agent and user through the later MCP installation, approval, credential, configuration, and read-only verification steps. `opencode` starts with the user's default provider/subscription; no LLM provider or key is set by the container.
+Do the setup for me. Ask only for details you cannot discover yourself, explain local changes before requesting approval, and never ask me to paste secrets into chat. Keep the connection read-only and verify it with one small inventory query. Stop after that verification.
 
-## Agent Setup and first milestone
+Important: this workflow is currently blocked at credential entry. Do not ask me to create or edit `.env`, do not write credentials to a file, do not run `nutanix-mcp init` with credentials, and do not contact Prism Central with credentials. Upstream `init` can persist secrets to `.env` without enforcing restrictive file permissions. Stop and report this blocker unless a safe private credential-entry method has been independently verified for the exact upstream revision.
+```
 
-Read [Agent Setup](setup-instructions/setup.md) for the copy/paste prompt and guided workflow. The first supported journey is a read-only connection from an MCP-compatible agent to Prism Central using the official Nutanix V4 API MCP Server. The machine running the MCP server must be able to reach customer-managed Prism Central; there is no universal public endpoint for customer clusters.
+You need an existing agent that can run local commands, an authorized Prism Central environment, and a network path from the machine running the MCP server to Prism Central. If the agent cannot reach that network, setup must stop until you arrange an authorized path. Do not use this preview server in production. The handoff is intentionally blocked at credential entry until a safe, private mechanism is validated; the agent must not represent itself as having completed setup.
 
-See `skills/nutanix-connect-prism-central/` for connection guidance and `skills/nutanix-automation-method-selection/` for choosing MCP, Ansible, SDK/API code, or OpenTofu/Terraform.
+## Optional resources
 
-## Ansible as an alternate path
+- [Agent Setup workflow](setup-instructions/setup.md)
+- [OpenCode Dev Container](examples/opencode/README.md) — optional, not required for the first connection
+- [Install toolkit skills](#install-skills) — optional guidance; skills are not the MCP server
 
-Ansible can be a useful alternate implementation when MCP does not expose a needed operation or repeatable playbooks are a better fit. It is not an automatic fallback for MCP errors. Diagnose network, TLS, authentication, authorization, input, and service errors at their source. Generated write-capable automation is for human review and execution in this prototype.
+## More toolkit paths
 
-## Install skills in another agent
+The first milestone is only a read-only MCP connection and one inventory query. Ansible, SDK/API code, OpenTofu/Terraform, skills, and the optional Dev Container are out of scope for that first setup. Ansible can be an alternate implementation after confirming the requested operation is not exposed by MCP; never use another tool to bypass MCP authorization or connection failures.
+
+### Install skills
 
 ```bash
 npx skills add pipoe2h/agent-toolkit-for-nutanix/skills

@@ -1,16 +1,20 @@
 # Connection basics — Nutanix V4 API MCP Server
 
+## First-connection handoff status
+
+Follow the [canonical setup workflow](https://github.com/pipoe2h/agent-toolkit-for-nutanix/blob/main/setup-instructions/setup.md) as the agent procedure. The handoff is currently blocked at credential entry: upstream's pinned revision has no verified private credential wizard, and its `init` path writes credentials into `.env` without enforcing restrictive permissions. Do not direct beginners to prepare an environment file or claim a completed connection until this is resolved.
+
 ## Upstream facts checked for this prototype
 
-Primary source: the official Nutanix repository [`nutanix/ntnx-api-mcp-server`](https://github.com/nutanix/ntnx-api-mcp-server), especially `README.md`, `docs/quickstart.md`, `docs/configuration.md`, and `docs/authentication.md`. Re-check these before publishing or running a new setup because the project is a Technical Preview and may change.
+Primary source: the official Nutanix repository [`nutanix/ntnx-api-mcp-server`](https://github.com/nutanix/ntnx-api-mcp-server), especially `README.md`, `docs/quickstart.md`, `docs/configuration.md`, `docs/authentication.md`, `src/cli.py`, and `src/config/settings.py`. Re-check these before publishing or running a new setup because the project is a Technical Preview and may change. The revision inspected for the credential finding was `dc447b3f948662b94c1ed61812eb0d1bb221470d`.
 
 - The README describes a local Python MCP server using stdio. It is launched by an MCP-compatible client as a subprocess; the server does not need a public Nutanix-hosted API endpoint and the stdio process does not itself expose a TCP listener.
 - The quickstart currently lists Python >=3.11, Git, a Prism Central deployment exposing V4 APIs, credentials, and network access from the server host to Prism Central (default API port 9440).
 - The upstream setup downloads API artifacts and discovers namespaces according to the connected Prism Central; those artifacts should not be reused across different PC instances.
-- The README currently describes `READ_ONLY_MODE=true` as the default and says non-GET operations are rejected server-side in that mode. Verify the effective setting in the installed version.
+- `src/cli.py::_save_config_dotenv` writes resolved credentials to `.env` using `Path.write_text` without applying restrictive permissions. Upstream auth docs also call out plaintext credential storage and warn to inspect `.env` after `init`/`refresh`.
+- Upstream configuration currently maps non-9440 ports to `http://`; first connection must be limited to port 9440 with TLS verification enabled. Do not infer HTTPS solely from `PC_INSECURE=false`.
+- The README currently describes `READ_ONLY_MODE=true` as the default and says non-GET operations are rejected server-side in that mode. Verify the effective setting in the installed version and enforce PC RBAC independently.
 - The upstream repository currently marks the project Technical Preview / non-production. Do not imply production support.
-- The upstream configuration docs describe TLS verification enabled by default (`PC_INSECURE=false`). Keep it enabled. If a lab has a self-signed certificate, prefer adding the issuing CA to the host trust store; only consider disabling verification as an explicitly accepted temporary lab exception.
-- Authentication options and their requirements may depend on Prism Central version and account type. Follow current upstream docs and official IAM documentation; do not assume API-key eligibility or service-account setup steps without checking.
 
 ## What the client connection means
 
@@ -18,13 +22,6 @@ There is no universal public Nutanix cloud API endpoint that every agent can rea
 
 For stdio, the MCP client starts the process and communicates over its stdin/stdout. This is convenient for local coding agents, but it means the MCP process and client must coexist on (or be managed from) a host with appropriate network reachability. A remote server or tunnel is a separate deployment design and should not be improvised as part of this setup.
 
-## Before setup, collect non-secret facts
+## Safety notes
 
-- Which agent client and version will launch the server?
-- Which host will run the MCP process, and can that host route to Prism Central?
-- What Prism Central version and V4 API namespaces are available?
-- Which authorized read-only identity will be used, and how will credentials be stored outside chat?
-- Does Prism Central present a certificate trusted by the MCP host?
-- Is this a lab-only test? Upstream preview software is explicitly non-production.
-
-Never ask the user to paste an API key or password into the conversation. Do not infer an endpoint from public DNS or guess hostnames.
+Never ask the user to paste an API key or password into the conversation. Do not infer an endpoint from public DNS or guess hostnames. Do not bypass an MCP denial by changing credentials or switching tools. Skills and client JSON are not an authorization boundary; PC RBAC and server read-only mode remain authoritative.

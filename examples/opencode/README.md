@@ -1,8 +1,7 @@
-# OpenCode Dev Container (optional)
+The Dev Container is optional guidance for trying OpenCode, not a prerequisite for the first agent-to-Prism Central connection. It installs OpenCode and toolkit skills only; it does not install/configure the Nutanix MCP server. Follow the canonical [agent setup workflow](../../setup-instructions/setup.md) from your existing agent instead. That workflow currently stops at credential entry because upstream `init` can write credentials into `.env` without enforcing restrictive permissions; do not try the optional container as a workaround.
 
-Clone this toolkit repository and open its root folder in VS Code. Select **Dev Containers: Reopen in Container**. VS Code detects `.devcontainer/devcontainer.json`, builds the Ubuntu image in `.devcontainer/Dockerfile`, installs OpenCode, and then installs the two toolkit skills into `.agents/skills/`.
+The Dev Container is model-provider agnostic: it does not choose a model, set an API key, or force Nutanix Enterprise AI. The optional NAI example below configures model inference only; that is separate from Prism Central MCP access.
 
-The Dev Container is model-provider agnostic: it does not choose a model, set an API key, or force Nutanix Enterprise AI. You can use any provider or subscription you configure in OpenCode. Claude Code, Codex, and other agents outside the container are not installed or changed.
 
 ## Optional: OpenCode with Nutanix Enterprise AI
 
