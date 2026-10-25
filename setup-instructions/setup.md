@@ -30,40 +30,39 @@ Ask only for these missing items:
 
 Do not require the user to look up PC/AOS versions before setup; discover them only if a specific error requires them. Test TCP reachability only after exact target and approval, without credentials. If unreachable, stop and explain the network-path prerequisite.
 
-## Critical credential blocker
+## Private credential entry
 
-The checked upstream revision `dc447b3f948662b94c1ed61812eb0d1bb221470d` has no documented interactive, non-echoing credential wizard. Its authentication guide recommends `.env`/environment/config credentials, states credentials are plaintext at rest in `.env`, and warns that `nutanix-mcp init`/`refresh` can write credentials to `.env`. Its `src/cli.py::_save_config_dotenv` writes `PC_PASSWORD` and other values using `Path.write_text` without setting restrictive mode. The app's settings source uses a repository `.env` and process environment; config-file values override environment values. Do not assume a generic MCP client's `cwd` selects a safe credential file.
+When installation is complete, the agent must give the user this next step verbatim, with real paths substituted:
 
-Therefore, until a separately verified private-entry method exists, do not ask a beginner to create/edit `.env`, do not have the agent write secrets, and do not run `init` with credentials. Stop at this gate and explain the exact limitation. Do not configure an incomplete MCP entry, contact Prism Central with credentials, or call setup successful. A human may choose to do a separately documented local credential step outside this handoff, but the agent must not observe the secret entry. Do not claim agent-led end-to-end setup in README while this blocker remains.
+> The Nutanix installer is ready. Enter your Prism Central sign-in in a separate local terminal so it never enters this chat:
+>
+> ```bash
+> python3 /absolute/path/to/agent-toolkit-for-nutanix/scripts/configure_nutanix_credentials.py /absolute/path/to/ntnx-api-mcp-server
+> ```
+>
+> It asks for the Prism Central address, authentication method, and username if needed, then prompts for the password/API key with input hidden. Do not paste the credential or terminal output here. When it prints that initialization completed, come back and say `done`.
 
-## Procedure when the credential gate is resolved
+Obtain the helper from this repository: clone the toolkit (`git clone https://github.com/pipoe2h/agent-toolkit-for-nutanix`) or fetch `scripts/configure_nutanix_credentials.py` from the published commit and read it first. Before asking the user to run it, the agent must show the exact script path/revision, read the helper source, verify Python and the server directory exist, explain that `.env` is plaintext at rest but owner-only (`0600`), and get approval. Never download-and-run an uninspected script.
 
-### 1. Inspect upstream and local state
+If initialization fails, tell the user the helper's safe error sentence and diagnose that cause without reading or displaying `.env`. To retry after fixing the cause, run the same command with `--retry`; the helper asks for the credential again. Never leave the user with an unexplained blocker, and never ask for credentials in chat.
 
-Pin and record the upstream commit/release. Inspect the current documented package/install route, all settings sources and precedence, credential writes, logging, TLS URL construction, read-only enforcement, and chosen agent's current local stdio configuration schema. A git clone of upstream is code to execute: show its source/revision and destinations before approval. Do not execute an opaque install script.
+## Critical caveats
 
-### 2. Explain and receive bounded approval
+- Upstream `init` stores credentials in `.env`. The helper pre-creates this file with mode `0600` *before* init runs, and refuses to start if a `.env` already exists (so it never overwrites or reuses unknown credentials). Upstream's current `_save_config_dotenv` opens the existing file for writing, so the mode is preserved; the helper re-checks the final mode and refuses to report success if it is not `0600`.
+- Credentials are plaintext at rest and readable by any process running as the same OS user. Disclose this before the user enters anything. Do not describe the helper as a vault or as zero-memory handling.
+- The helper forces `PC_PORT=9440`, `PC_INSECURE=false`, and `READ_ONLY_MODE=true`, and removes inherited `PC_HOST`/`PC_PORT`/`PC_USERNAME`/`PC_PASSWORD`/`PC_API_KEY`/`PC_INSECURE`/`READ_ONLY_MODE` from the child environment so the user's shell cannot redirect the target or weaken the safety settings. It passes exactly one auth method, captures and discards raw stdout/stderr, and never puts credentials in argv or chat.
+- The helper requires POSIX permissions and a real interactive terminal; it refuses non-TTY stdin and refuses to run on Windows.
+- If init fails, the protected `.env` is retained (or removed when the process could not start at all) and the raw output is never shown. Never display the file or its logs.
+- If the user cannot run the helper, give the exact command and explain that setup resumes after they do.
 
-List exact destinations, dependency provenance, files to create/change, network endpoints (Prism Central: HTTPS 9440; developer namespace service only if upstream requires it), credential mechanism, and expected user-only action. State preview/non-production status, plaintext-at-rest risks if relevant, and no writes to PC. Ask for approval of this complete bounded scope. Reconfirm if scope changes.
+## First-connection procedure
 
-### 3. Install and configure local runtime
-
-After approval, use the verified upstream procedure in an isolated virtual environment; record revision and package versions. Do not use `latest` without pinning/recording. Prepare directories and non-secret config with restrictive permissions. Preserve existing client config by parsing and merging the named server entry; if parsing/merging or name collision is unclear, stop. Never write secrets into agent config. Configure `PC_PORT=9440`, `PC_INSECURE=false`, and `READ_ONLY_MODE=true` explicitly in the effective runtime source only after safely resolving environment overrides. Do not proceed if inherited environment or CLI arguments can override safety settings.
-
-### 4. Private credential entry, initialization, and validation
-
-Use only the private credential mechanism approved and validated at the critical gate. It must not echo or log secret values, must safely handle special characters, and must produce a local credential source with owner-only access without printing it. The mechanism must ensure initialization cannot rewrite credentials into a permissive `.env`; inspect the exact pinned upstream code first. If this cannot be guaranteed, stop.
-
-Only then, after explicit approval for contacting the exact target, run upstream initialization and validation with output reviewed for leakage. Verify effective URL is HTTPS to the intended host on port 9440, TLS verification is on, read-only mode is on, and exactly one auth method is active. Emit only allowlisted safe facts/booleans; never print full settings, env dumps, exceptions with values, or credential hashes. Do not treat key-name checks or documented defaults as proof of effective runtime posture. Stop on any mismatch/auth/TLS/network failure.
-
-### 5. Register the client and verify the real query
-
-Merge the local stdio server using the client version's official configuration, with absolute executable path and only non-secret values. Start/reload the client as documented. Confirm it reports the Nutanix server and actual tools. Ask the agent to inspect the discovered read operation schema and permissions; request up to five VM records only if the discovered `vmm` operation supports it. Keep returned fields minimal (name, power state); do not expose broader inventory. If no suitable read is available, report that accurately and stop; never invent tool names or switch to bypass access controls.
-
-### 6. Report result honestly
-
-Report the agent/server versions, pinned upstream revision, effective TLS/read-only checks, and whether the MCP client handshake and real read passed. Separate local validation from live acceptance. If blocked, state the exact stage, reason, and one safe next action. Never report "connected" based solely on successful installation or validation.
+1. Inspect current upstream and local state, pin the upstream commit, and get approval for exact local changes and target access.
+2. Install the MCP server in an isolated environment using the verified upstream source and version.
+3. Run the private credential helper as described above. After it reports success, configure the supported MCP client using its official local-stdio setup. Store no credentials in client config; preserve existing entries, obtain approval, and restart/reload.
+4. Confirm real MCP tool discovery, then perform one authorized read-only query (up to five VM names and power states only if the discovered schema supports it). No writes. If no suitable operation exists, state that and stop.
+5. Report agent/server versions, pinned upstream revision, credential file permission, effective TLS/read-only posture, and live handshake/query status. For failures, explain the phase, plain-language cause, and one next action; never claim success without the real read.
 
 ## Supplemental guidance
 
-Toolkit skills and the optional Dev Container are not prerequisites for this first connection. If available, the `nutanix-connect-prism-central` skill may supplement this workflow, but may not relax any safety gate. Do not introduce Ansible, SDK/API scripts, Terraform/OpenTofu, Agent Gateway, or write tasks into this milestone.
+Toolkit skills and the optional Dev Container are not prerequisites. Do not introduce Ansible, SDK/API scripts, Terraform/OpenTofu, Agent Gateway, or writes into this first milestone.

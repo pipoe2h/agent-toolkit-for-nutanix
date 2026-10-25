@@ -1,4 +1,6 @@
-The Dev Container is optional guidance for trying OpenCode, not a prerequisite for the first agent-to-Prism Central connection. It installs OpenCode and toolkit skills only; it does not install/configure the Nutanix MCP server. Follow the canonical [agent setup workflow](../../setup-instructions/setup.md) from your existing agent instead. That workflow currently stops at credential entry because upstream `init` can write credentials into `.env` without enforcing restrictive permissions; do not try the optional container as a workaround.
+# OpenCode Dev Container (optional)
+
+The Dev Container is optional guidance for trying OpenCode, not a prerequisite for connecting your existing agent. It installs OpenCode and toolkit skills only; it does not install/configure the Nutanix MCP server. Follow the [first-connection workflow](../../setup-instructions/setup.md). Credential entry uses a local hidden prompt in the helper; it must never happen in chat. Credentials are stored in `.env` with owner-only permissions, plaintext at rest. Review this limitation before continuing.
 
 The Dev Container is model-provider agnostic: it does not choose a model, set an API key, or force Nutanix Enterprise AI. The optional NAI example below configures model inference only; that is separate from Prism Central MCP access.
 

@@ -1,14 +1,16 @@
 # Connect your agent to Nutanix
 
-Copy this prompt into your existing AI coding agent. It will inspect its environment and report the current blocker; this initial release does not yet complete setup.
+Copy this prompt into your existing AI coding agent. It will inspect its environment and guide you through the setup, including a private credential-entry step. It does not query Prism Central automatically yet.
 
 ```text
 Connect this agent to my Nutanix environment by following:
 https://raw.githubusercontent.com/pipoe2h/agent-toolkit-for-nutanix/main/setup-instructions/setup.md
 
-Do the setup for me. Ask only for details you cannot discover yourself, explain local changes before requesting approval, and never ask me to paste secrets into chat. Keep the connection read-only and verify it with one small inventory query. Stop after that verification.
+Do not ask me to enter a credential in this chat. When credential entry is needed, give me the exact command to run in a separate local terminal using `scripts/configure_nutanix_credentials.py`; make sure the helper uses hidden input and never prints credentials. Do not claim setup is blocked without explaining what I should do next. Keep the connection read-only and verify it with one small inventory query. Stop after that verification.
 
-Important: this workflow is currently blocked at credential entry. Do not ask me to create or edit `.env`, do not write credentials to a file, do not run `nutanix-mcp init` with credentials, and do not contact Prism Central with credentials. Upstream `init` can persist secrets to `.env` without enforcing restrictive file permissions. Stop and report this blocker unless a safe private credential-entry method has been independently verified for the exact upstream revision.
+After the local helper exits successfully, return to the agent and say `done`; it should continue with client registration, handshake and one read-only query.
+
+Important: the workflow includes a local helper for upstream `.env` behavior. Explain that credentials remain plaintext in an owner-only `.env` file and get approval before asking me to run it. If the helper is not available or verified, stop and give me a clear next step; do not ask me to create `.env` or run `nutanix-mcp init` myself.
 ```
 
-The detailed instructions are in [`setup-instructions/setup.md`](../setup-instructions/setup.md). The current workflow is explicitly blocked at the credential step: upstream's checked revision lacks a verified private-entry mechanism and `init` writes credentials to `.env`. The agent must stop rather than ask you to manage a credentials file or pretend the connection is complete. These instructions take effect after the repository changes are published; verify the public workflow URL is up to date before distributing the prompt.
+The detailed instructions are in [`setup-instructions/setup.md`](../setup-instructions/setup.md). The agent requests approval before running the local credential helper, explains that `.env` is plaintext-at-rest despite mode `0600`, then guides the user through hidden local-terminal entry. Never paste credentials or terminal output into chat.

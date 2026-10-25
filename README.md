@@ -1,21 +1,23 @@
 # Agent Toolkit for Nutanix
 
-The handoff below is currently blocked at credential entry. The upstream MCP server has no verified private credential wizard, and its `init` command writes secrets back to `.env` without enforcing restrictive file permissions. The agent must not collect secrets in chat or claim a completed setup. This independent prototype targets an existing AI coding agent and read-only communication with customer-managed Prism Central using the official Nutanix V4 API MCP Server. Upstream currently labels that MCP server Technical Preview/non-production; do not use it in production. The current handoff does not yet install/connect the MCP server because secure credential entry is unresolved.
+This project helps an existing AI coding agent connect to an authorized, customer-managed Prism Central using the official Nutanix V4 API MCP Server. Upstream currently labels the MCP server Technical Preview/non-production; do not use it in production.
 
-## Connect your agent
+# Connect your agent to Nutanix
 
-Copy this prompt into your existing AI coding agent. This initial release reports the current blocker; it does not yet install or connect the MCP server.
+Copy this prompt into your existing AI coding agent. It will inspect the environment and coordinate the setup, including a clear local-terminal step for entering credentials privately.
 
 ```text
 Connect this agent to my Nutanix environment by following:
 https://raw.githubusercontent.com/pipoe2h/agent-toolkit-for-nutanix/main/setup-instructions/setup.md
 
-Do the setup for me. Ask only for details you cannot discover yourself, explain local changes before requesting approval, and never ask me to paste secrets into chat. Keep the connection read-only and verify it with one small inventory query. Stop after that verification.
+Do not ask me to enter a credential in this chat. When credential entry is needed, give me the exact command to run in a separate local terminal using `scripts/configure_nutanix_credentials.py`; make sure the helper uses hidden input and never prints credentials. Do not claim setup is blocked without explaining what I should do next. Keep the connection read-only and verify it with one small inventory query. Stop after that verification.
 
-Important: this workflow is currently blocked at credential entry. Do not ask me to create or edit `.env`, do not write credentials to a file, do not run `nutanix-mcp init` with credentials, and do not contact Prism Central with credentials. Upstream `init` can persist secrets to `.env` without enforcing restrictive file permissions. Stop and report this blocker unless a safe private credential-entry method has been independently verified for the exact upstream revision.
+After the local helper exits successfully, return to the agent and say `done`; it should continue with client registration, handshake and one read-only query.
+
+Important: the workflow includes a local helper for upstream `.env` behavior. Explain that credentials remain plaintext in an owner-only `.env` file and get approval before asking me to run it. If the helper is not available or verified, stop and give me a clear next step; do not ask me to create `.env` or run `nutanix-mcp init` myself.
 ```
 
-You need an existing agent that can run local commands, an authorized Prism Central environment, and a network path from the machine running the MCP server to Prism Central. If the agent cannot reach that network, setup must stop until you arrange an authorized path. Do not use this preview server in production. The handoff is intentionally blocked at credential entry until a safe, private mechanism is validated; the agent must not represent itself as having completed setup.
+The helper for entering credentials privately is `scripts/configure_nutanix_credentials.py`. The installer stores credentials in upstream `.env`, plaintext but restricted to your OS account (`0600`); same-user processes may still access it. Review that tradeoff before continuing. The machine running the MCP server must already have an authorized network path to Prism Central. First connection is HTTPS on port 9440, with TLS verification and read-only mode enabled; the agent does not write to Nutanix.
 
 ## Optional resources
 
@@ -25,7 +27,7 @@ You need an existing agent that can run local commands, an authorized Prism Cent
 
 ## More toolkit paths
 
-The first milestone is only a read-only MCP connection and one inventory query. Ansible, SDK/API code, OpenTofu/Terraform, skills, and the optional Dev Container are out of scope for that first setup. Ansible can be an alternate implementation after confirming the requested operation is not exposed by MCP; never use another tool to bypass MCP authorization or connection failures.
+The initial milestone is only a read-only MCP connection and one inventory query. Ansible can be considered only after confirming the needed operation is not exposed by MCP; never use another tool to bypass MCP authorization or connection failures.
 
 ### Install skills
 
@@ -35,7 +37,6 @@ npx skills add pipoe2h/agent-toolkit-for-nutanix/skills
 
 ## Safety and scope
 
-- Start read-only and keep TLS verification enabled.
 - Never ask users to paste secrets into agent conversations or commit keys.
 - Do not assume Prism Central is publicly reachable; the agent/MCP runtime needs an authorized network path.
 - Treat the upstream Nutanix V4 API MCP Server as Technical Preview/non-production until its status changes.

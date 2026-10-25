@@ -2,7 +2,7 @@
 
 ## First-connection handoff status
 
-Follow the [canonical setup workflow](https://github.com/pipoe2h/agent-toolkit-for-nutanix/blob/main/setup-instructions/setup.md) as the agent procedure. The handoff is currently blocked at credential entry: upstream's pinned revision has no verified private credential wizard, and its `init` path writes credentials into `.env` without enforcing restrictive permissions. Do not direct beginners to prepare an environment file or claim a completed connection until this is resolved.
+- Credentials use the local hidden-input helper described in the canonical setup guide. The user is instructed to run it in their own terminal, not by an agent's tool runner. The helper pre-creates `.env` as mode 0600, sets port 9440/TLS verification/read-only mode explicitly, and suppresses raw output. Credentials are still plaintext at rest and visible to same-user processes; disclose the limitation and require approval before use.
 
 ## Upstream facts checked for this prototype
 

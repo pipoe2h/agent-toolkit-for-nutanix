@@ -27,7 +27,7 @@ This skill documents the official Nutanix V4 API MCP Server, whose upstream repo
 
 ## Procedure
 
-For the toolkit's first-connection handoff, follow the [canonical setup workflow](https://github.com/pipoe2h/agent-toolkit-for-nutanix/blob/main/setup-instructions/setup.md). Do not independently ask a beginner to create or edit `.env`: the upstream CLI `init` command can persist credentials to `.env` without enforcing restrictive permissions. Until a private credential-entry path is verified for the exact upstream revision, stop at that credential gate and do not contact Prism Central with credentials.
+- Set up credentials privately using `scripts/configure_nutanix_credentials.py` only after the user approves and the helper source is reviewed. It requires a real local terminal, hides secret input, creates `.env` as `0600`, enforces port 9440/TLS/read-only mode, and suppresses raw command output. Clearly disclose plaintext-at-rest storage. Never ask for credentials in chat or leave the user with an unexplained blocker.
 
 1. **Inspect the current state.** Identify the agent client/version, OS, Python version, existing MCP configuration, Prism Central endpoint (only if already safely available), and network location. Do not change existing client config without approval.
 2. **Read upstream material.** Confirm current install commands, config schema, supported MCP clients, preview status, authentication, credential-write behavior, TLS URL construction, and security guidance from official upstream docs and code. Do not copy stale commands from this skill.
@@ -63,12 +63,11 @@ Do not change the transport or switch to Ansible to mask a failure in steps 1–
 ## Safety notes
 
 - MCP stdio is a local process boundary, not a remote cloud service. Control the machine and user account that run the process.
-- The upstream preview server describes read-only mode as its default; verify effective settings and enforce PC RBAC independently.
+- Verify effective read-only settings and enforce PC RBAC independently.
 - Tool discovery can include operations with different permissions; inspect operation permissions before any sensitive call.
 - Never enable writes for a convenience test. This toolkit's MVP deliberately stays read-only.
 - Do not treat an agent's confirmation prompt as a substitute for Prism Central RBAC.
-- The current first-connection workflow is blocked at credential entry because upstream `init` persists credentials into `.env` without enforcing restrictive permissions. Follow the canonical workflow and do not bypass this blocker.
-
+- Credential setup uses a separate local hidden-input helper; disclose plaintext-at-rest storage and exact permissions, and never ask for secrets in chat.
 
 ## Validation gates
 
