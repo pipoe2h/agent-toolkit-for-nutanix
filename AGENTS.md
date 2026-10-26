@@ -10,4 +10,5 @@ These rules are independent project guidance, not an authorization system. Prism
 - Use SDK/API code for custom workflows where the required operation is confirmed; use OpenTofu/Terraform when declarative state management is the right fit. These tools are complementary, not interchangeable.
 - For this prototype, produce potentially mutating Ansible, SDK, Terraform, or OpenTofu artifacts only for human review and execution. Do not run or apply them.
 - Treat the Nutanix V4 API MCP Server as Technical Preview according to its upstream repository until that status is explicitly changed.
+- Report inventory results with returned/total counts and the operation used. Verify pagination and field projection; if the client cannot pass query parameters, say so and do not claim a complete list.
 - Preserve existing agent configuration and project rules; append clearly delimited rules rather than overwriting existing content.

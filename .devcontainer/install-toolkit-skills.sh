@@ -6,6 +6,7 @@ cd "$(git rev-parse --show-toplevel)"
 # OpenCode discovers these project-local skills via .agents/skills/SKILL.md.
 npx --yes skills@1.7.4 add . \
   -s nutanix-connect-prism-central \
+  -s nutanix-readonly-inventory \
   -s nutanix-automation-method-selection \
   -y -a opencode -p
 
