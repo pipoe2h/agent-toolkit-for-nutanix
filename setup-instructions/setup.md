@@ -31,7 +31,7 @@ Ask only for these missing items:
 
 ## Private credential entry
 
-When installation is complete, the agent must give the user this next step verbatim, with real paths substituted:
+The helper prints safe progress to standard error while the upstream init runs: it first confirms the Prism Central check is starting, then reports API-definition initialization and periodic elapsed-time updates. Upstream output remains captured and is never displayed.
 
 > The Nutanix installer is ready. Enter your Prism Central sign-in in a separate local terminal so it never enters this chat:
 >
@@ -51,7 +51,7 @@ If initialization fails, tell the user the helper's safe error sentence and diag
 - Credentials are plaintext at rest and readable by any process running as the same OS user. Disclose this before the user enters anything. Do not describe the helper as a vault or as zero-memory handling.
 - The helper forces `PC_PORT=9440`, `PC_INSECURE=false`, and `READ_ONLY_MODE=true`, and removes inherited `PC_HOST`/`PC_PORT`/`PC_USERNAME`/`PC_PASSWORD`/`PC_API_KEY`/`PC_INSECURE`/`READ_ONLY_MODE` from the child environment so the user's shell cannot redirect the target or weaken the safety settings. It passes exactly one auth method, captures and discards raw stdout/stderr, and never puts credentials in argv or chat.
 - The helper requires POSIX permissions and a real interactive terminal; it refuses non-TTY stdin and refuses to run on Windows.
-- If init fails, the protected `.env` is retained (or removed when the process could not start at all) and the raw output is never shown. Never display the file or its logs.
+- Init emits safe stderr progress: starting the Prism Central check over HTTPS 9440, then starting API-definition initialization. If it is still running, the helper prints elapsed time every 10 seconds, then a completion/failure line with total duration. Raw upstream stdout/stderr is captured and suppressed throughout.
 - If the user cannot run the helper, give the exact command and explain that setup resumes after they do.
 
 ## First-connection procedure

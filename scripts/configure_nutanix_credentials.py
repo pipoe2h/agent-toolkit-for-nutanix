@@ -3,11 +3,15 @@ from pathlib import Path
 import stat
 import subprocess
 import sys
+import threading
+import time
 
 
 class SetupError(Exception):
     """A safe-to-display setup failure."""
 
+
+PROGRESS_INTERVAL_SECONDS = 10
 
 def create_private_env(path: Path) -> None:
     """Create an empty credential file exclusively with owner-only permissions."""
@@ -31,8 +35,12 @@ def validate_secret(value: str) -> None:
         raise ValueError("Credential must be non-empty and contain no line breaks")
 
 
+def _progress(message: str) -> None:
+    print(message, file=sys.stderr, flush=True)
+
+
 def _run_init(server_dir: Path, host: str, username: str, secret: str, auth_method: str, retry: bool = False) -> str:
-    """Run upstream init with transient credentials and a pre-protected .env."""
+    """Run init with visible safe progress and transient credentials."""
     if auth_method not in {"password", "api_key"}:
         raise SetupError("Choose either password or API key authentication.")
     validate_secret(secret)
@@ -69,8 +77,11 @@ def _run_init(server_dir: Path, host: str, username: str, secret: str, auth_meth
         env.update({"PC_USERNAME": username, "PC_PASSWORD": secret})
     else:
         env["PC_API_KEY"] = secret
+
+    process = None
     try:
-        result = subprocess.run(
+        _progress("Starting Prism Central check (HTTPS 9440, certificate verification enabled)...")
+        process = subprocess.Popen(
             [str(server_dir / ".venv/bin/nutanix-mcp"), "init"],
             cwd=server_dir,
             env=env,
@@ -78,18 +89,48 @@ def _run_init(server_dir: Path, host: str, username: str, secret: str, auth_meth
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            timeout=300,
-            check=False,
         )
-    except (OSError, subprocess.TimeoutExpired):
+        started = time.monotonic()
+        _progress("Downloading API definitions and checking Prism Central compatibility; this can take a few minutes...")
+        timer_stop = threading.Event()
+        process_finished = threading.Event()
+
+        def report_elapsed() -> None:
+            while not process_finished.is_set():
+                if timer_stop.wait(PROGRESS_INTERVAL_SECONDS):
+                    return
+                if process_finished.is_set():
+                    return
+                elapsed = int(time.monotonic() - started)
+                _progress(f"Initialization is still running ({elapsed}s elapsed). No credentials or raw output are shown.")
+
+        timer = threading.Thread(target=report_elapsed, name="nutanix-init-progress", daemon=True)
+        timer.start()
+        try:
+            stdout, stderr = process.communicate(timeout=300)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            stdout, stderr = process.communicate()
+            raise SetupError("Initialization timed out after five minutes. Check network reachability and retry; raw output was suppressed.") from None
+        finally:
+            process_finished.set()
+            timer_stop.set()
+            timer.join(timeout=1)
+    except OSError:
         env_path.unlink(missing_ok=True)
-        raise SetupError("Initialization could not complete. Check the local installation and network, then retry.") from None
+        raise SetupError("Initialization could not start. Check the local installation and retry.") from None
+
+    elapsed = int(time.monotonic() - started)
     mode = stat.S_IMODE(env_path.stat().st_mode)
     if mode != 0o600:
         raise SetupError("Initialization created a credential file with unsafe permissions. Stop; the file remains in place for safe manual cleanup.")
-    if result.returncode != 0:
-        raise SetupError("Initialization failed. The private credential file is retained for retry. Check network reachability, TLS trust, and authorization; raw output is omitted to protect credentials.")
-    return "Initialization completed. The credential file has owner-only permissions; TLS verification and read-only mode were explicitly enabled."
+    if process.returncode != 0:
+        message = f"Initialization failed after {elapsed}s. Check network reachability, TLS trust, and authorization; raw output was omitted to protect credentials."
+        _progress(message)
+        raise SetupError(message)
+    completion = f"Initialization completed in {elapsed}s. Credential file is mode 0600; TLS verification and read-only mode were explicitly enabled."
+    _progress(completion)
+    return completion
 
 
 def discard_empty_credential_file(server_dir: Path) -> None:
