@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "nutanix": {
+      "type": "stdio",
+      "command": "./scripts/launch-nutanix-mcp",
+      "args": [],
+      "env": {
+        "NUTANIX_MCP_HOME": "${PLUGIN_DATA}/ntnx-api-mcp-server"
+      },
+      "cwd": "${PLUGIN_DATA}"
+    }
+  }
+}

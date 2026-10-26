@@ -1,0 +1,44 @@
+#!/bin/sh
+# Launch the official Nutanix V4 API MCP Server over stdio.
+#
+# The plugin ships this launcher instead of a bare executable name so the server
+# is found regardless of whether the installing shell has the virtualenv on PATH.
+# It never prints credentials and never reads the credential file's contents.
+#
+# Resolution order for the server installation:
+#   1. NUTANIX_MCP_HOME  (set by mcp.json to ${PLUGIN_DATA}/ntnx-api-mcp-server)
+#   2. ${PLUGIN_DATA}/ntnx-api-mcp-server
+#   3. $HOME/.nutanix-mcp/ntnx-api-mcp-server
+set -eu
+
+home="${NUTANIX_MCP_HOME:-}"
+if [ -z "$home" ]; then
+  if [ -n "${PLUGIN_DATA:-}" ]; then
+    home="${PLUGIN_DATA}/ntnx-api-mcp-server"
+  else
+    home="${HOME:-/tmp}/.nutanix-mcp/ntnx-api-mcp-server"
+  fi
+fi
+
+bin="${home}/.venv/bin/nutanix-mcp"
+
+if [ ! -d "$home" ]; then
+  printf 'nutanix-mcp server directory not found: %s\n' "$home" >&2
+  printf 'Run this toolkit'"'"'s first-connection workflow, or set NUTANIX_MCP_HOME to an existing install.\n' >&2
+  exit 127
+fi
+
+if [ ! -x "$bin" ]; then
+  printf 'nutanix-mcp entry point not executable: %s\n' "$bin" >&2
+  printf 'Create the virtualenv and install the server there before starting the MCP client.\n' >&2
+  exit 127
+fi
+
+if [ ! -f "${home}/.env" ]; then
+  printf 'no .env found in %s; the server will have no Prism Central credentials.\n' "$home" >&2
+  printf 'Run the toolkit credential helper before using this connection.\n' >&2
+fi
+
+# The upstream server reads its .env from the project root, so run from there.
+cd "$home"
+exec "$bin" serve-stdio

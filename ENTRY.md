@@ -36,4 +36,6 @@ Read-only inventory is the only operational skill implemented today. Other opera
 - `skills/nutanix-readonly-inventory/references/query-contract.md`
 - `skills/nutanix-readonly-inventory/references/tool-surface-checks.md`
 - `skills/nutanix-automation-method-selection/references/methods-and-fallback.md`
+- `plugins/nutanix-core/README.md` — portable Agent Plugins package (manifest, credential-free MCP entry, bundled skills).
+- `docs/plugin-architecture.md` — how the package relates to the canonical skills.
 - `docs/roadmap/next-operational-skills.md`

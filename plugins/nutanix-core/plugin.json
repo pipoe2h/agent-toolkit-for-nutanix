@@ -1,0 +1,21 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "nutanix-core",
+  "version": "0.1.0",
+  "description": "Connect an AI agent to a customer-managed Nutanix Prism Central and operate it read-only. Bundles the Nutanix V4 API MCP server entry and skills for connection setup, complete read-only inventory queries, and automation method selection when MCP does not expose an operation.",
+  "author": {
+    "name": "Jose Gomez"
+  },
+  "homepage": "https://github.com/pipoe2h/agent-toolkit-for-nutanix",
+  "repository": "https://github.com/pipoe2h/agent-toolkit-for-nutanix",
+  "license": "Apache-2.0",
+  "keywords": [
+    "nutanix",
+    "prism-central",
+    "ahv",
+    "mcp",
+    "agent-skills",
+    "inventory",
+    "read-only"
+  ]
+}
