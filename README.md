@@ -11,7 +11,7 @@ Preview/non-production; do not use it in production.
 credential-free MCP server entry, and the skills bundled together. Clients that implement the
 format load all of it from one install, with no prompt to paste. Install it with whatever plugin
 installation your client provides — installation and enablement are client-managed and outside the
-portable format. See [docs/plugin-architecture.md](docs/plugin-architecture.md) and
+portable format; the Agent Plugins site's compatible-clients page lists each client's entry point. See [docs/plugin-architecture.md](docs/plugin-architecture.md) and
 [plugins/nutanix-core/README.md](plugins/nutanix-core/README.md).
 
 **Path B — paste the prompt (fallback).** For clients without Agent Plugins support, copy the

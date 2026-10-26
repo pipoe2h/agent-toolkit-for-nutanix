@@ -10,6 +10,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "plugins/nutanix-core"
+PLUGIN_SCHEMA = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
+MCP_SCHEMA = "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json"
 
 
 def run(script: str, *args: str) -> subprocess.CompletedProcess:
@@ -17,6 +19,16 @@ def run(script: str, *args: str) -> subprocess.CompletedProcess:
         [sys.executable, str(ROOT / script), *args],
         capture_output=True, text=True, cwd=ROOT,
     )
+
+
+def scaffold(root: Path, name: str = "broken-plugin") -> Path:
+    """Create a minimal plugin at root/plugins/<name> with a valid manifest."""
+    plugin = root / "plugins" / name
+    (plugin / "skills").mkdir(parents=True)
+    (plugin / "plugin.json").write_text(
+        '{"$schema": "%s", "name": "%s"}' % (PLUGIN_SCHEMA, name)
+    )
+    return plugin
 
 
 class PluginScaffoldTests(unittest.TestCase):
@@ -27,9 +39,7 @@ class PluginScaffoldTests(unittest.TestCase):
 
     def test_manifest_declares_the_portable_schema_and_matches_directory(self):
         manifest = (PLUGIN / "plugin.json").read_text()
-        self.assertIn(
-            '"$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"', manifest
-        )
+        self.assertIn('"$schema": "%s"' % PLUGIN_SCHEMA, manifest)
         self.assertIn('"name": "nutanix-core"', manifest)
 
     def test_mcp_command_is_a_single_plugin_relative_token(self):
@@ -58,36 +68,112 @@ class PluginScaffoldTests(unittest.TestCase):
         for name in skills:
             self.assertTrue((PLUGIN / "skills" / name / "SKILL.md").is_file(), name)
 
+    def test_packaged_credential_helper_matches_canonical_copy(self):
+        canonical = (ROOT / "scripts/configure_nutanix_credentials.py").read_bytes()
+        packaged = (PLUGIN / "scripts/configure_nutanix_credentials.py").read_bytes()
+        self.assertEqual(canonical, packaged)
+
+    def test_connect_skill_helper_reference_resolves_inside_the_package(self):
+        skill = PLUGIN / "skills/nutanix-connect-prism-central/SKILL.md"
+        for reference in re.findall(r"`(scripts/[^`]+)`", skill.read_text()):
+            self.assertTrue((PLUGIN / reference).is_file(), reference)
+
+    def test_launcher_does_not_depend_on_ambient_home(self):
+        launcher = (PLUGIN / "scripts/launch-nutanix-mcp").read_text()
+        self.assertNotIn("${HOME:-", launcher)
+        self.assertIn("PLUGIN_DATA", launcher)
+
     def test_validator_rejects_placeholder_in_command(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            plugin = root / "plugins/broken-plugin"
-            (plugin / "skills").mkdir(parents=True)
-            (plugin / "plugin.json").write_text(
-                '{"$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json", '
-                '"name": "broken-plugin"}'
-            )
+            plugin = scaffold(root)
             (plugin / "mcp.json").write_text(
-                '{"$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json", '
-                '"mcpServers": {"x": {"type": "stdio", "command": "${PLUGIN_ROOT}/run"}}}'
+                '{"$schema": "%s", "mcpServers": {"x": {"type": "stdio", '
+                '"command": "${PLUGIN_ROOT}/run"}}}' % MCP_SCHEMA
             )
             result = run("scripts/validate-plugin.py", "--root", str(root))
             self.assertEqual(result.returncode, 1)
             self.assertIn("placeholders are not expanded", result.stderr)
 
-    def test_validator_rejects_unknown_manifest_field_and_bad_name(self):
+    def test_validator_rejects_unknown_manifest_field(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            plugin = root / "plugins/broken-plugin"
-            plugin.mkdir(parents=True)
+            plugin = scaffold(root)
             (plugin / "plugin.json").write_text(
-                '{"$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json", '
-                '"name": "other-name", "mcpServer": {}}'
+                '{"$schema": "%s", "name": "broken-plugin", "mcpServer": {}}' % PLUGIN_SCHEMA
             )
             result = run("scripts/validate-plugin.py", "--root", str(root))
             self.assertEqual(result.returncode, 1)
             self.assertIn("unknown top-level field", result.stderr)
-            self.assertIn("must match the plugin directory name", result.stderr)
+
+    def test_name_directory_mismatch_is_a_warning_not_an_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plugin = scaffold(root)
+            (plugin / "plugin.json").write_text(
+                '{"$schema": "%s", "name": "other-name"}' % PLUGIN_SCHEMA
+            )
+            result = run("scripts/validate-plugin.py", "--root", str(root))
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("differs from the plugin directory name", result.stderr)
+
+    def test_empty_mcp_servers_object_is_valid(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plugin = scaffold(root)
+            (plugin / "mcp.json").write_text(
+                '{"$schema": "%s", "mcpServers": {}}' % MCP_SCHEMA
+            )
+            result = run("scripts/validate-plugin.py", "--root", str(root))
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_non_loopback_http_endpoint_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plugin = scaffold(root)
+            (plugin / "mcp.json").write_text(
+                '{"$schema": "%s", "mcpServers": {"x": {"type": "streamable-http", '
+                '"url": "http://prism.example.test/mcp"}}}' % MCP_SCHEMA
+            )
+            result = run("scripts/validate-plugin.py", "--root", str(root))
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("non-loopback endpoints must use https", result.stderr)
+
+    def test_loopback_http_endpoint_is_accepted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plugin = scaffold(root)
+            (plugin / "mcp.json").write_text(
+                '{"$schema": "%s", "mcpServers": {"x": {"type": "streamable-http", '
+                '"url": "http://localhost:9440/mcp"}}}' % MCP_SCHEMA
+            )
+            result = run("scripts/validate-plugin.py", "--root", str(root))
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_duplicate_header_name_differing_only_by_case_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plugin = scaffold(root)
+            (plugin / "mcp.json").write_text(
+                '{"$schema": "%s", "mcpServers": {"x": {"type": "streamable-http", '
+                '"url": "https://example.test/mcp", "headers": '
+                '{"X-Tenant": "a", "x-tenant": "b"}}}}' % MCP_SCHEMA
+            )
+            result = run("scripts/validate-plugin.py", "--root", str(root))
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("duplicate header name", result.stderr)
+
+    def test_reserved_env_name_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plugin = scaffold(root)
+            (plugin / "mcp.json").write_text(
+                '{"$schema": "%s", "mcpServers": {"x": {"type": "stdio", "command": "npx", '
+                '"env": {"PLUGIN_DATA": "/tmp/x"}}}}' % MCP_SCHEMA
+            )
+            result = run("scripts/validate-plugin.py", "--root", str(root))
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("reserved variable", result.stderr)
 
 
 class SkillParityTests(unittest.TestCase):

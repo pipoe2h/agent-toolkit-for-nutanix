@@ -1,30 +1,34 @@
 #!/bin/sh
 # Launch the official Nutanix V4 API MCP Server over stdio.
 #
-# The plugin ships this launcher instead of a bare executable name so the server
-# is found regardless of whether the installing shell has the virtualenv on PATH.
-# It never prints credentials and never reads the credential file's contents.
+# The plugin ships this launcher instead of a bare executable name so the server is
+# found regardless of whether the installing shell has the virtualenv on PATH.
+# It never reads or prints credentials; it only checks that the credential file
+# exists and warns when it does not.
 #
-# Resolution order for the server installation:
-#   1. NUTANIX_MCP_HOME  (set by mcp.json to ${PLUGIN_DATA}/ntnx-api-mcp-server)
-#   2. ${PLUGIN_DATA}/ntnx-api-mcp-server
-#   3. $HOME/.nutanix-mcp/ntnx-api-mcp-server
+# The install location arrives as NUTANIX_MCP_HOME, which mcp.json sets to
+# ${PLUGIN_DATA}/ntnx-api-mcp-server. PLUGIN_DATA is the client-owned writable
+# directory that survives plugin updates. This launcher deliberately does not fall
+# back to $HOME: a conformant Agent Plugins plugin must not depend on a
+# base-environment variable.
 set -eu
 
-home="${NUTANIX_MCP_HOME:-}"
-if [ -z "$home" ]; then
-  if [ -n "${PLUGIN_DATA:-}" ]; then
-    home="${PLUGIN_DATA}/ntnx-api-mcp-server"
-  else
-    home="${HOME:-/tmp}/.nutanix-mcp/ntnx-api-mcp-server"
-  fi
+if [ -n "${NUTANIX_MCP_HOME:-}" ]; then
+  home="${NUTANIX_MCP_HOME}"
+elif [ -n "${PLUGIN_DATA:-}" ]; then
+  home="${PLUGIN_DATA}/ntnx-api-mcp-server"
+else
+  printf 'NUTANIX_MCP_HOME and PLUGIN_DATA are both unset; cannot locate the nutanix-mcp server.\n' >&2
+  printf 'This launcher is started by an Agent Plugins client, which supplies both.\n' >&2
+  exit 127
 fi
 
 bin="${home}/.venv/bin/nutanix-mcp"
 
 if [ ! -d "$home" ]; then
   printf 'nutanix-mcp server directory not found: %s\n' "$home" >&2
-  printf 'Run this toolkit'"'"'s first-connection workflow, or set NUTANIX_MCP_HOME to an existing install.\n' >&2
+  printf 'This package expects the upstream server under the plugin data directory (${PLUGIN_DATA}/ntnx-api-mcp-server).\n' >&2
+  printf 'Install it there, or set NUTANIX_MCP_HOME before launching the client.\n' >&2
   exit 127
 fi
 

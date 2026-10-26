@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """Validate Agent Plugins packages under plugins/.
 
-Checks the portable contract only: plugin.json conformance, mcp.json shape and
-path/command rules, and the skills/ discovery layout. Client-specific extension
-directories and per-client install files are out of scope by design.
+These are structural checks that mirror the normative rules of the Agent Plugins
+1.0.0 specification. The canonical JSON Schemas at
+https://agent-plugins.org/schemas/1.0.0/ remain authoritative for the manifest and
+MCP configuration documents; this script is a dependency-free gate for CI, not a
+replacement for validating against them.
 
-Stdlib only. Exit 0 when every package is valid, non-zero otherwise.
+Client-specific extension directories and per-client install files are out of
+scope by design.
+
+Stdlib only. Exit 0 when every package is valid, non-zero on a hard error.
 
 Usage:
     python3 scripts/validate-plugin.py                 # validate every plugin
@@ -35,13 +40,22 @@ EXPANSION_RE = re.compile(r"\$\{(PLUGIN_ROOT|PLUGIN_DATA)\}")
 RESERVED_ENV = {"PLUGIN_ROOT", "PLUGIN_DATA"}
 TRANSPORTS = ("stdio", "streamable-http", "sse")
 CWD_RE = re.compile(r"^(?:\./|\$\{PLUGIN_ROOT\}(?:/|$)|\$\{PLUGIN_DATA\}(?:/|$))")
+LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "::1", "[::1]"}
+LOOPBACK_RE = re.compile(r"^127(?:\.\d{1,3}){3}$")
+HEADER_NAME_RE = re.compile(r"^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$")
 
 errors: list[str] = []
+warnings: list[str] = []
 
 
 def fail(message: str) -> None:
     errors.append(message)
     print(f"  ERROR: {message}", file=sys.stderr)
+
+
+def warn(message: str) -> None:
+    warnings.append(message)
+    print(f"  WARNING: {message}", file=sys.stderr)
 
 
 def load_json(path: Path) -> dict | None:
@@ -71,7 +85,11 @@ def validate_manifest(plugin_dir: Path, manifest: dict | None) -> None:
     if not isinstance(name, str) or not NAME_RE.fullmatch(name) or not 1 <= len(name) <= 64:
         fail(f"{rel}/plugin.json: invalid name {name!r}")
     elif name != plugin_dir.name:
-        fail(f"{rel}/plugin.json: name {name!r} must match the plugin directory name")
+        # Convention in this repository, not a specification requirement.
+        warn(
+            f"{rel}/plugin.json: name {name!r} differs from the plugin directory name; "
+            "the specification does not require them to match"
+        )
     for key in ("version", "description", "homepage", "repository", "license"):
         if key in manifest and not isinstance(manifest[key], str):
             fail(f"{rel}/plugin.json: {key} must be a string")
@@ -95,7 +113,12 @@ def validate_manifest(plugin_dir: Path, manifest: dict | None) -> None:
         fail(f"{rel}/plugin.json: extensions must be an object")
 
 
-def validate_stdio(rel: str, server_name: str, server: dict) -> None:
+def resolve_command_target(plugin_dir: Path, command: str) -> Path:
+    return (plugin_dir / command[2:]).resolve()
+
+
+def validate_stdio(plugin_dir: Path, server_name: str, server: dict) -> None:
+    rel = plugin_dir.name
     where = f"{rel}/mcp.json: server {server_name!r}"
     allowed = {"type", "command", "args", "env", "cwd"}
     for key in sorted(set(server) - allowed):
@@ -104,15 +127,21 @@ def validate_stdio(rel: str, server_name: str, server: dict) -> None:
     if not isinstance(command, str) or not command:
         fail(f"{where}: command must be a non-empty string")
     elif EXPANSION_RE.search(command):
-        fail(f"{where}: command is a single executable token; placeholders are not expanded there")
+        fail(
+            f"{where}: command is a single executable token; placeholders are not expanded there"
+        )
     elif command.startswith("./"):
-        target = (plugin_dir_of(rel) / command[2:]).resolve()
-        if not target.is_file():
+        target = resolve_command_target(plugin_dir, command)
+        if not str(target).startswith(str(plugin_dir.resolve())):
+            fail(f"{where}: command path escapes the plugin root: {command}")
+        elif not target.is_file():
             fail(f"{where}: command path does not exist: {command}")
         elif not target.stat().st_mode & stat.S_IXUSR:
             fail(f"{where}: command path is not executable: {command}")
     args = server.get("args")
-    if args is not None and (not isinstance(args, list) or not all(isinstance(a, str) for a in args)):
+    if args is not None and (
+        not isinstance(args, list) or not all(isinstance(a, str) for a in args)
+    ):
         fail(f"{where}: args must be an array of strings")
     env = server.get("env")
     if env is not None:
@@ -127,24 +156,48 @@ def validate_stdio(rel: str, server_name: str, server: dict) -> None:
         fail(f"{where}: cwd must be ./, ${{PLUGIN_ROOT}}-rooted, or ${{PLUGIN_DATA}}-rooted")
 
 
-def plugin_dir_of(rel: str) -> Path:
-    for candidate in plugin_roots:
-        if candidate.name == rel:
-            return candidate
-    return Path(rel)
+def validate_remote(rel: str, server_name: str, server: dict) -> None:
+    where = f"{rel}/mcp.json: server {server_name!r}"
+    for key in sorted(set(server) - {"type", "url", "headers"}):
+        fail(f"{where}: unknown field {key!r}")
+    url = server.get("url")
+    if not isinstance(url, str) or not url.startswith(("http://", "https://")):
+        fail(f"{where}: url must be an absolute http(s) URL")
+    elif url.startswith("http://"):
+        host = url.split("//", 1)[1].split("/", 1)[0]
+        host = host.rsplit("@", 1)[-1].split(":", 1)[0].strip("[]")
+        if not host or not (host in LOOPBACK_HOSTS or LOOPBACK_RE.match(host)):
+            fail(f"{where}: non-loopback endpoints must use https")
+    headers = server.get("headers")
+    if headers is not None:
+        if not isinstance(headers, dict) or not all(
+            isinstance(v, str) for v in headers.values()
+        ):
+            fail(f"{where}: headers must map string keys to string values")
+        else:
+            seen: set[str] = set()
+            for key in headers:
+                if not HEADER_NAME_RE.match(key):
+                    fail(f"{where}: invalid HTTP header name {key!r}")
+                lowered = key.lower()
+                if lowered in seen:
+                    fail(f"{where}: duplicate header name {key!r} differing only by case")
+                seen.add(lowered)
 
 
 def validate_mcp(plugin_dir: Path, config: dict | None) -> None:
     rel = plugin_dir.name
-    if config is None:
+    # MCP configuration is an optional component: a missing fixed location is not
+    # an error per the discovery rules. A present-but-invalid document still fails.
+    if not (plugin_dir / "mcp.json").exists() or config is None:
         return
     for key in sorted(set(config) - {"$schema", "mcpServers"}):
         fail(f"{rel}/mcp.json: unknown top-level field {key!r}")
     if config.get("$schema") != MCP_SCHEMA:
         fail(f"{rel}/mcp.json: $schema must be {MCP_SCHEMA}")
     servers = config.get("mcpServers")
-    if not isinstance(servers, dict) or not servers:
-        fail(f"{rel}/mcp.json: mcpServers must be a non-empty object")
+    if not isinstance(servers, dict):
+        fail(f"{rel}/mcp.json: mcpServers must be an object; an empty object is valid")
         return
     for server_name, server in sorted(servers.items()):
         if not isinstance(server, dict):
@@ -155,19 +208,9 @@ def validate_mcp(plugin_dir: Path, config: dict | None) -> None:
             fail(f"{rel}/mcp.json: server {server_name!r} has invalid type {transport!r}")
             continue
         if transport == "stdio":
-            validate_stdio(rel, server_name, server)
-            continue
-        allowed = {"type", "url", "headers"}
-        for key in sorted(set(server) - allowed):
-            fail(f"{rel}/mcp.json: server {server_name!r}: unknown field {key!r}")
-        url = server.get("url")
-        if not isinstance(url, str) or not url.startswith(("http://", "https://")):
-            fail(f"{rel}/mcp.json: server {server_name!r}: url must be http(s)")
-        headers = server.get("headers")
-        if headers is not None and (
-            not isinstance(headers, dict) or not all(isinstance(v, str) for v in headers.values())
-        ):
-            fail(f"{rel}/mcp.json: server {server_name!r}: headers must map strings to strings")
+            validate_stdio(plugin_dir, server_name, server)
+        else:
+            validate_remote(rel, server_name, server)
 
 
 def validate_skills(plugin_dir: Path) -> None:
@@ -181,7 +224,8 @@ def validate_skills(plugin_dir: Path) -> None:
     for child in sorted(p for p in skills_dir.iterdir() if p.is_dir()):
         skill_file = child / "SKILL.md"
         if not skill_file.is_file():
-            fail(f"{rel}/skills/{child.name}: missing SKILL.md")
+            # Per the discovery rule this directory is simply not a skill.
+            warn(f"{rel}/skills/{child.name}: no SKILL.md, so it is not discovered as a skill")
             continue
         text = skill_file.read_text(encoding="utf-8")
         if not text.startswith("---\n"):
@@ -203,9 +247,6 @@ def validate_skills(plugin_dir: Path) -> None:
                 fail(f"{rel}/skills/{child.name}: broken reference {link}")
 
 
-plugin_roots: list[Path] = []
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=str(Path(__file__).resolve().parents[1]))
@@ -225,16 +266,17 @@ def main() -> int:
         print("No plugin directories matched.")
         return 0
 
-    plugin_roots.extend(candidates)
     for plugin_dir in candidates:
         validate_manifest(plugin_dir, load_json(plugin_dir / "plugin.json"))
-        validate_mcp(plugin_dir, load_json(plugin_dir / "mcp.json"))
+        mcp_path = plugin_dir / "mcp.json"
+        validate_mcp(plugin_dir, load_json(mcp_path) if mcp_path.exists() else None)
         validate_skills(plugin_dir)
 
     if errors:
         print(f"Plugin validation failed with {len(errors)} error(s).")
         return 1
-    print(f"Validated {len(candidates)} plugin package(s).")
+    suffix = f" ({len(warnings)} warning(s))" if warnings else ""
+    print(f"Validated {len(candidates)} plugin package(s){suffix}.")
     return 0
 
 
