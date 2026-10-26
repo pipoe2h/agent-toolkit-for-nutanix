@@ -12,12 +12,12 @@ https://raw.githubusercontent.com/pipoe2h/agent-toolkit-for-nutanix/b40d617/setu
 
 Do not ask me to enter a credential in this chat. When credential entry is needed, give me the exact command to run in a separate local terminal using `scripts/configure_nutanix_credentials.py`; make sure the helper uses hidden input and never prints credentials. Do not claim setup is blocked without explaining what I should do next. Keep the connection read-only and verify it with one small inventory query. Stop after that verification.
 
-After the local helper exits successfully, return to the agent and say `done`; it should continue with client registration, handshake and one read-only query.
+Once the agent has installed Nutanix MCP and safely completed private credential initialization, it will update your OpenCode config with a local `nutanix` MCP server entry. **Fully quit and relaunch OpenCode after the config changes** so the new server process starts. Then, in the reopened session, use OpenCode's MCP view (`/mcps` on current releases) to verify it shows connected and exposes Nutanix tools; check your installed version's docs for the exact status command. A CLI config listing alone does not prove the running session has connected. If tools are visible, continue to the single read-only inventory check. If they are not, report the actual failure without retrying any credential prompt blindly.
 
 Important: the workflow includes a local helper for upstream `.env` behavior. Explain that credentials remain plaintext in an owner-only `.env` file and get approval before asking me to run it. If the helper is not available or verified, stop and give me a clear next step; do not ask me to create `.env` or run `nutanix-mcp init` myself.
 ```
 
-The helper for entering credentials privately is `scripts/configure_nutanix_credentials.py`. The installer stores credentials in upstream `.env`, plaintext but restricted to your OS account (`0600`); same-user processes may still access it. Review that tradeoff before continuing. The machine running the MCP server must already have an authorized network path to Prism Central. First connection is HTTPS on port 9440, with TLS verification and read-only mode enabled; the agent does not write to Nutanix.
+The installer stores credentials in upstream `.env`, plaintext but restricted to your OS account (`0600`); same-user processes may still access it. Review that tradeoff before continuing. The machine running the MCP server must already have an authorized network path to Prism Central. First connection is HTTPS on port 9440, with TLS verification and read-only mode enabled; the agent does not write to Nutanix.
 
 ## Optional resources
 
