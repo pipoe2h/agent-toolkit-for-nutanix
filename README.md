@@ -4,6 +4,23 @@ This project helps an existing AI coding agent connect to an authorized, custome
 using the official Nutanix V4 API MCP Server. Upstream currently labels the MCP server Technical
 Preview/non-production; do not use it in production.
 
+## Quick start: pick one path
+
+**Path A — install the plugin package (preferred).** `plugins/nutanix-core/` is a portable
+[Agent Plugins 1.0.0](https://agent-plugins.org/specification) package: one manifest, one
+credential-free MCP server entry, and the skills bundled together. Clients that implement the
+format load all of it from one install, with no prompt to paste. Install it with whatever plugin
+installation your client provides — installation and enablement are client-managed and outside the
+portable format; the Agent Plugins site's compatible-clients page lists each client's entry point. See [docs/plugin-architecture.md](docs/plugin-architecture.md) and
+[plugins/nutanix-core/README.md](plugins/nutanix-core/README.md).
+
+**Path B — paste the prompt (fallback).** For clients without Agent Plugins support, copy the
+prompt below. It reaches the same skills and MCP configuration; it just carries the instructions in
+text instead of in a package.
+
+Neither path installs the upstream MCP server, stores credentials, or makes Prism Central
+reachable. Those remain environment steps in the first-connection workflow.
+
 ## Start here: connect, then operate
 
 Copy this prompt into your existing AI coding agent. It first checks whether a Nutanix MCP connection is
@@ -58,6 +75,8 @@ MCP server must already have an authorized network path to Prism Central. First 
 
 You do not need to read or combine these yourself; the prompt above points the agent at them.
 
+- [Plugin package](plugins/nutanix-core/README.md) — the portable Agent Plugins package: manifest, credential-free MCP entry, bundled skills.
+- [Plugin architecture](docs/plugin-architecture.md) — how the package and the canonical skills stay one toolkit.
 - [ENTRY.md](ENTRY.md) — the agent-facing route index: which skill to load for which task.
 - [Connect an agent to Prism Central](skills/nutanix-connect-prism-central/SKILL.md) — the connection workflow, used only when no live connection exists.
 - [Read-only inventory](skills/nutanix-readonly-inventory/SKILL.md) — schema inspection, pagination, reconciliation, and partial-result reporting for VMs, clusters, hosts, subnets, and alerts.

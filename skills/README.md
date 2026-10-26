@@ -11,7 +11,7 @@ Install selected skills with the open installer:
 npx skills add <owner>/agent-toolkit-for-nutanix/skills
 ```
 
-Installing is optional. An agent can also read the skill files directly from a clone of this repository, which is what this repo's setup prompt assumes.
+Installing is optional. An agent can also read the skill files directly from a clone of this repository, which is what this repo's setup prompt assumes. Clients that implement Agent Plugins can load these skills from the bundled package `plugins/nutanix-core/` instead.
 
 Installing or reading skills does not configure, install, or connect an MCP server, manage Prism Central credentials, or change client configuration. Connection setup is a separate step: `skills/nutanix-connect-prism-central/SKILL.md`.
 
