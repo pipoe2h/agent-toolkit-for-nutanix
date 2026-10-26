@@ -7,6 +7,7 @@ This file is the index. Do not treat the skill collection as the connectivity la
 | User task | Load this skill | Starting method |
 |---|---|---|
 | Connect an agent to a customer's Prism Central | `skills/nutanix-connect-prism-central/SKILL.md` | Official Nutanix V4 API MCP Server, stdio transport |
+| List or report resources (VMs, clusters, hosts, subnets, alerts) | `skills/nutanix-readonly-inventory/SKILL.md` | MCP, read-only, paginated |
 | Check connection, discover API operations, inspect schemas/permissions | `skills/nutanix-connect-prism-central/SKILL.md` | MCP discovery and read-only API operations |
 | Task not covered by available MCP operations; generate repeatable automation | `skills/nutanix-automation-method-selection/SKILL.md` | Evaluate supported Ansible modules first; then SDK/IaC coverage |
 | Build custom programmatic integrations | `skills/nutanix-automation-method-selection/SKILL.md` | Nutanix V4 SDKs/API, after confirming release support |
@@ -26,4 +27,6 @@ This file is the index. Do not treat the skill collection as the connectivity la
 ## References
 
 - `skills/nutanix-connect-prism-central/references/connection-basics.md`
+- `skills/nutanix-readonly-inventory/references/query-contract.md`
+- `skills/nutanix-readonly-inventory/references/tool-surface-checks.md`
 - `skills/nutanix-automation-method-selection/references/methods-and-fallback.md`

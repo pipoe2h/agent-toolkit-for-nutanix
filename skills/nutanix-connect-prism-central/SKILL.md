@@ -3,7 +3,7 @@ name: nutanix-connect-prism-central
 description: "Connect an MCP-compatible AI agent to customer-managed Nutanix Prism Central. Covers the Nutanix V4 API MCP Server, stdio client configuration, local network reachability, TLS, least-privilege credentials, initialization, validation, and read-only resource discovery. Use when onboarding or troubleshooting an agent connection to a Nutanix environment."
 license: Apache-2.0
 metadata:
-  version: "0.1.0"
+  version: "0.1.1"
 ---
 
 # Connect an AI agent to Prism Central
@@ -76,6 +76,7 @@ Do not change the transport or switch to Ansible to mask a failure in steps 1–
 - Actual PC/AOS V4 API availability, namespace support, and RBAC requirements depend on the target deployment.
 - A dedicated least-privilege identity and certificate trust chain must be confirmed on the user's environment.
 - A successful validation-only check does not prove the agent client can launch the process; test the full client handshake separately.
+- A list operation must honor `$limit` and `$select`; probe with `$limit=1`. If it does not, record the per-client tool-surface limitation and treat all inventories as partial.
 
 ## References
 
