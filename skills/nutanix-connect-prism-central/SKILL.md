@@ -27,24 +27,23 @@ This skill documents the official Nutanix V4 API MCP Server, whose upstream repo
 
 ## Procedure
 
-- Set up credentials privately using `scripts/configure_nutanix_credentials.py` only after the user approves and the helper source is reviewed. It requires a real local terminal, hides secret input, creates `.env` as `0600`, enforces port 9440/TLS/read-only mode, and suppresses raw command output. Clearly disclose plaintext-at-rest storage. Never ask for credentials in chat or leave the user with an unexplained blocker.
-
 1. **Inspect the current state.** Identify the agent client/version, OS, Python version, existing MCP configuration, Prism Central endpoint (only if already safely available), and network location. Do not change existing client config without approval.
 2. **Read upstream material.** Confirm current install commands, config schema, supported MCP clients, preview status, authentication, credential-write behavior, TLS URL construction, and security guidance from official upstream docs and code. Do not copy stale commands from this skill.
 3. **Keep first scope narrow.** Use only local stdio, HTTPS on the documented 9440 port, effective `READ_ONLY_MODE=true`, TLS verification enabled, and one authorized read-only inventory request. Never perform infrastructure writes or bypass a failed authorization/network/TLS check.
-4. **Treat skills as guidance, not setup.** This skill is not the MCP server and does not provide credentials. Skills and the optional Dev Container are not prerequisites for the first connection.
+4. **Collect credentials privately.** Once installation succeeds, provide the user the exact `configure_nutanix_credentials.py` command to run in a separate local terminal. Before they run it, obtain approval and disclose that the upstream `.env` stores plaintext credentials with mode `0600`; never ask for details in chat/client forms. The helper uses hidden input, enforces HTTPS/read-only settings, captures raw output and confirms completion. If it cannot be run, tell the user why and the next step.
+5. **Treat skills as guidance, not setup.** This skill is not the MCP server and does not provide credentials. Skills and the optional Dev Container are not prerequisites for the first connection.
 
 Completion criterion: the intended agent lists actual MCP tools and successfully performs an authorized read-only query against the intended Prism Central, with TLS verification enabled and no credential exposed. If blocked at credentials, report it as blocked rather than connected.
 
 ## Codex setup example
 
-For first-connection setup, use the canonical workflow in `setup-instructions/setup.md`; do not proceed to credential collection until it is unblocked. This example is supplemental only and does not establish a safe credential path.
+The canonical setup workflow uses the separate-terminal credential helper. Do not put secrets in Codex config; set only server command, args, and working directory after helper success.
 
 
 
 ## OpenCode setup example
 
-For first-connection setup, use the canonical workflow in `setup-instructions/setup.md`; do not copy credentials into OpenCode config. A local JSON config with a `cwd` does not fix upstream's `.env` persistence behavior and is not a substitute for a verified private credential path.
+The canonical setup workflow uses the separate-terminal credential helper. Do not put secrets in OpenCode JSON config; set only server command, args, and working directory after helper success.
 
 
 

@@ -53,8 +53,11 @@ If initialization fails, tell the user the helper's safe error sentence and diag
 - The helper requires POSIX permissions and a real interactive terminal; it refuses non-TTY stdin and refuses to run on Windows.
 - Init emits safe stderr progress: starting the Prism Central check over HTTPS 9440, then starting API-definition initialization. If it is still running, the helper prints elapsed time every 10 seconds, then a completion/failure line with total duration. Raw upstream stdout/stderr is captured and suppressed throughout.
 - If the user cannot run the helper, give the exact command and explain that setup resumes after they do.
+The installation described here has three distinct delays. First, the helper performs `nutanix-mcp init`; it prints safe stage progress and elapsed time because this may take minutes while Prism Central is contacted and API definitions are downloaded. Second, when the MCP client starts `nutanix-mcp serve-stdio`, the server parses the downloaded YAML artifacts and builds its operation catalog before it can answer the MCP `initialize` request. Third, on this upstream revision, `serve-stdio` does not call `validate_startup_readiness`; the separate `run` command does. Do not attribute a reported 14–15 second `serve-stdio` delay to a Prism Central retry unless logs or a reproduction demonstrate that; YAML parsing is an independent startup cost.
 
-## First-connection procedure
+No actual MCP handshake was verified in the reported test: `printf 'all requests' | server` closes stdin immediately after writing, which is not the same lifecycle as an MCP client keeping both pipes open and waiting for a response before sending the next message. Do not recommend that method as proof of MCP client compatibility. Do not add a targeted `mcp` SDK pin or change `stdio_server()` based only on the report that the SDK exits when a pipe is initially quiet. Reproduce with the exact installed `mcp`, AnyIO and Python versions and an idle-open-pipe client before asserting a version bug or changing SDK/runtime code. Report verified client handshake and whether the stdio process remains alive while awaiting the first message as separate checks.
+
+
 
 1. Inspect current upstream and local state, pin the upstream commit, and get approval for exact local changes and target access.
 2. Install the MCP server in an isolated environment using the verified upstream source and version.
